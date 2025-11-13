@@ -11,8 +11,6 @@ import {
 } from "../Util";
 import { sanitizeUsername } from "../validations/username";
 import { AttackImpl } from "./AttackImpl";
-import { PolicyManager, TechTreeManager } from "./PolicyTechSystem";
-import { PolicyTechManager } from "./PolicyTechManager";
 import {
   Alliance,
   AllianceRequest,
@@ -32,8 +30,12 @@ import {
   PlayerInfo,
   PlayerProfile,
   PlayerType,
+  Policy,
+  PolicyType,
   Relation,
   Team,
+  Tech,
+  TechType,
   TerraNullius,
   Tick,
   Unit,
@@ -48,6 +50,12 @@ import {
   GameUpdateType,
   PlayerUpdate,
 } from "./GameUpdates";
+import {
+  PREDEFINED_POLICIES,
+  PREDEFINED_TECHNOLOGIES,
+} from "./PolicyTechExamples";
+import { PolicyTechManager } from "./PolicyTechManager";
+import { PolicyManager, TechTreeManager } from "./PolicyTechSystem";
 import {
   bestShoreDeploymentSource,
   canBuildTransportShip,
@@ -84,17 +92,17 @@ export class PlayerImpl implements Player {
 
   private _name: string;
   private _displayName: string;
-  
+
   // 国策和科技树系统
   public policyManager: PolicyManager;
   public techTreeManager: TechTreeManager;
-  
+
   // 额外的属性用于支持国策和科技效果
   public goldProductionRate: number = 0;
   public troopTrainingRate: number = 0;
   public unitCostReduction: number = 0;
   public unlockedUnits: Set<string> = new Set();
-  
+
   public pastOutgoingAllianceRequests: AllianceRequest[] = [];
   private _expiredAlliances: Alliance[] = [];
 
@@ -128,17 +136,19 @@ export class PlayerImpl implements Player {
     this._gold = 0n;
     this._displayName = this._name;
     this._pseudo_random = new PseudoRandom(simpleHash(this.playerInfo.id));
-    
+
     // 初始化国策和科技树系统
     this.policyManager = new PolicyManager(this);
-    this.techTreeManager = new TechTreeManager(this, [...PREDEFINED_TECHNOLOGIES]);
+    this.techTreeManager = new TechTreeManager(this, [
+      ...PREDEFINED_TECHNOLOGIES,
+    ]);
   }
 
   // 获取活跃的政策
   getActivePolicies(): Policy[] {
     return this.policyManager.getActivePolicies();
   }
-  
+
   largestClusterBoundingBox: { min: Cell; max: Cell } | null;
 
   toUpdate(): PlayerUpdate {
@@ -368,13 +378,13 @@ export class PlayerImpl implements Player {
   setHasSpawned(hasSpawned: boolean): void {
     this._hasSpawned = hasSpawned;
   }
-  
+
   // 国策系统相关方法
   // 实施政策
   enactPolicy(policyType: PolicyType): boolean {
     const policy = PolicyTechManager.getPolicy(policyType);
     if (!policy) return false;
-    
+
     const success = this.policyManager.implementPolicy(policy as any);
     if (success) {
       // 设置激活时间
@@ -385,86 +395,90 @@ export class PlayerImpl implements Player {
     }
     return success;
   }
-  
+
   // 获取活跃的政策
   activePolicies(): Policy[] {
     return this.policyManager.getActivePolicies();
   }
-  
+
   // 获取可用的政策
   availablePolicies(): Policy[] {
     // 这里应该根据玩家状态过滤可用的政策
-    return PolicyTechManager.getAllPolicies().filter(policy => 
-      this.canImplementPolicy(policy.id)
+    return PolicyTechManager.getAllPolicies().filter((policy) =>
+      this.canImplementPolicy(policy.id),
     );
   }
-  
+
   // 取消政策
   cancelPolicy(policyType: PolicyType): boolean {
     const policy = PolicyTechManager.getPolicy(policyType);
     if (!policy) return false;
-    
+
     return this.policyManager.cancelPolicy(policy.id);
   }
-  
+
   // 获取政策剩余持续时间
   policyRemainingDuration(policyType: PolicyType): number | null {
-      const policy = PolicyTechManager.getPolicy(policyType);
-      if (!policy) return null;
-      
-      const activePolicy = this.policyManager.getActivePolicy(policy.id);
-      if (!activePolicy || !(activePolicy as any).activationTick) return null;
-      
-      const elapsedTicks = this.mg.ticks() - (activePolicy as any).activationTick;
-      const remainingDuration = policy.duration - elapsedTicks;
-      return remainingDuration > 0 ? remainingDuration : 0;
+    const policy = PolicyTechManager.getPolicy(policyType);
+    if (!policy) return null;
+
+    const activePolicy = this.policyManager.getActivePolicy(policy.id);
+    if (!activePolicy || !(activePolicy as any).activationTick) return null;
+
+    const elapsedTicks = this.mg.ticks() - (activePolicy as any).activationTick;
+    const remainingDuration = policy.duration - elapsedTicks;
+    return remainingDuration > 0 ? remainingDuration : 0;
   }
-  
+
   // 科技树系统相关方法
   startResearch(techType: TechType): boolean {
     return this.techTreeManager.startResearch(techType);
   }
-  
+
   // 获取已研究的科技
   researchedTechs(): Tech[] {
     return this.getResearchedTechnologies();
   }
-  
+
   // 获取当前正在研究的科技
-  currentResearch(): { tech: Tech; progress: number; remainingTime: number } | null {
+  currentResearch(): {
+    tech: Tech;
+    progress: number;
+    remainingTime: number;
+  } | null {
     const currentTech = this.getCurrentResearch();
     if (!currentTech) return null;
-    
+
     const progress = this.getTechResearchProgress(currentTech.id);
     const researchSpeed = 1; // 可以根据政策和科技效果调整
     const remainingTime = Math.ceil((100 - progress) / researchSpeed);
-    
+
     return {
       tech: currentTech,
       progress,
-      remainingTime
+      remainingTime,
     };
   }
-  
+
   // 获取可用的科技
   availableTechs(): Tech[] {
     // 这里应该根据玩家已研究的科技过滤可用的科技
-    return PolicyTechManager.getAllTechnologies().filter(tech => 
-      this.canResearchTech(tech.id)
+    return PolicyTechManager.getAllTechnologies().filter((tech) =>
+      this.canResearchTech(tech.id),
     );
   }
-  
+
   // 检查是否可以研究科技
   canResearchTech(techId: string): boolean {
     const tech = this.techTreeManager.getTechnology(techId);
     if (!tech) return false;
-    
+
     // 检查是否已经研究过
     if (this.isTechResearched(techId)) return false;
-    
+
     // 检查是否正在研究
     if (this.getCurrentResearch()?.id === techId) return false;
-    
+
     // 检查前置科技
     if (tech.prerequisites) {
       for (const prereq of tech.prerequisites) {
@@ -473,57 +487,74 @@ export class PlayerImpl implements Player {
         }
       }
     }
-    
+
     // 检查资金
     return this.gold() >= tech.researchCost;
   }
-  
+
   // 获取已研究的科技
   getResearchedTechnologies(): Tech[] {
     return this.techTreeManager.getResearchedTechnologies();
   }
-  
+
   getCurrentResearch(): Tech | null {
     return this.techTreeManager.getCurrentResearch();
   }
-  
+
   // 检查科技是否已研究
   isTechResearched(techId: string): boolean {
     return this.techTreeManager.isTechResearched(techId);
   }
-  
+
   getAllTechnologies() {
     return this.techTreeManager.getAllTechnologies();
   }
-  
+
   // 更新国策和科技系统
   updatePolicyAndTech(): void {
     // 更新国策和科技管理器
     this.policyManager.update();
     this.techTreeManager.update();
-    
+
     // 获取活跃政策和已研究科技
     const activePolicies = new Set();
-    this.policyManager.getActivePolicies().forEach(policy => {
-      if ('type' in policy) {
+    this.policyManager.getActivePolicies().forEach((policy) => {
+      if ("type" in policy) {
         activePolicies.add(policy.type);
       }
     });
-    
+
     const researchedTechs = new Set();
-    this.techTreeManager.getResearchedTechnologies().forEach(tech => {
-      if ('type' in tech) {
+    this.techTreeManager.getResearchedTechnologies().forEach((tech) => {
+      if ("type" in tech) {
         researchedTechs.add(tech.type);
       }
     });
-    
+
     // 使用PolicyTechManager计算各种加成效果
-    const goldProductionMultiplier = PolicyTechManager.calculateGoldProductionMultiplier(researchedTechs, activePolicies);
-    const troopTrainingMultiplier = PolicyTechManager.calculateTroopTrainingMultiplier(researchedTechs, activePolicies);
-    const unitCostReduction = PolicyTechManager.calculateUnitCostReduction(researchedTechs, activePolicies);
-    const attackBonus = PolicyTechManager.calculateAttackBonus(researchedTechs, activePolicies);
-    const defenseBonus = PolicyTechManager.calculateDefenseBonus(researchedTechs, activePolicies);
-    
+    const goldProductionMultiplier =
+      PolicyTechManager.calculateGoldProductionMultiplier(
+        researchedTechs,
+        activePolicies,
+      );
+    const troopTrainingMultiplier =
+      PolicyTechManager.calculateTroopTrainingMultiplier(
+        researchedTechs,
+        activePolicies,
+      );
+    const unitCostReduction = PolicyTechManager.calculateUnitCostReduction(
+      researchedTechs,
+      activePolicies,
+    );
+    const attackBonus = PolicyTechManager.calculateAttackBonus(
+      researchedTechs,
+      activePolicies,
+    );
+    const defenseBonus = PolicyTechManager.calculateDefenseBonus(
+      researchedTechs,
+      activePolicies,
+    );
+
     // 更新加成属性
     // 转换为百分比表示
     this.goldProductionRate = (goldProductionMultiplier - 1) * 100;
@@ -531,10 +562,12 @@ export class PlayerImpl implements Player {
     this.unitCostReduction = unitCostReduction * 100; // 转换为百分比
     this.attackBonus = attackBonus * 100;
     this.defenseBonus = defenseBonus * 100;
-    
+
     // 更新解锁的单位
-    this.unlockedUnits = new Set(PolicyTechManager.getUnlockedUnits(researchedTechs));
-    
+    this.unlockedUnits = new Set(
+      PolicyTechManager.getUnlockedUnits(researchedTechs),
+    );
+
     // 确保加成不会出现负值
     this.unitCostReduction = Math.max(0, this.unitCostReduction);
   }
@@ -990,59 +1023,302 @@ export class PlayerImpl implements Player {
   setGold(gold: Gold): void {
     this._gold = gold;
   }
-  
-  // 获取考虑科技和国策加成后的金币产出率
+
+  /**
+   * 获取有效的金币生产速率（基于国策和科技效果）
+   */
   getEffectiveGoldProductionRate(): number {
-    // 基础产出率从配置中获取
-    const baseRate = this.mg.config().goldAdditionRate(this);
-    // 应用百分比加成
-    const bonusMultiplier = 1 + this.goldProductionRate / 100;
-    return Number(baseRate) * bonusMultiplier;
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const activePolicies = new Set(
+      this.policyManager.getActivePolicies().map((p) => p.id),
+    );
+    return PolicyTechManager.calculateGoldProductionMultiplier(
+      researchedTechs,
+      activePolicies,
+    );
   }
-  
-  // 获取考虑科技和国策加成后的军队训练速度
+
+  /**
+   * 获取有效的军队训练速率（基于国策和科技效果）
+   */
   getEffectiveTroopTrainingRate(): number {
-    // 基础训练率从配置中获取
-    const baseRate = this.mg.config().troopIncreaseRate(this);
-    // 应用百分比加成
-    const bonusMultiplier = 1 + this.troopTrainingRate / 100;
-    return baseRate * bonusMultiplier;
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const activePolicies = new Set(
+      this.policyManager.getActivePolicies().map((p) => p.id),
+    );
+    return PolicyTechManager.calculateTroopTrainingMultiplier(
+      researchedTechs,
+      activePolicies,
+    );
   }
-  
-  // 获取单位成本降低百分比
+
+  /**
+   * 获取单位成本降低百分比
+   */
   getUnitCostReduction(): number {
-    return this.unitCostReduction;
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const activePolicies = new Set(
+      this.policyManager.getActivePolicies().map((p) => p.id),
+    );
+    return PolicyTechManager.calculateUnitCostReduction(
+      researchedTechs,
+      activePolicies,
+    );
   }
-  
-  // 获取已解锁的单位类型
-  getUnlockedUnits(): Set<UnitType> {
-    return this.unlockedUnits || new Set();
+
+  /**
+   * 获取已解锁的单位列表
+   */
+  getUnlockedUnits(): UnitType[] {
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    return PolicyTechManager.getUnlockedUnits(researchedTechs);
   }
-  
-  // 检查单位是否已解锁
-  isUnitUnlocked(unitType: UnitType): boolean {
-    if (!this.unlockedUnits) return true; // null表示没有特殊解锁限制
-    return this.unlockedUnits.has(unitType);
+
+  /**
+   * 获取防御加成百分比
+   */
+  getDefenseBonus(): number {
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const activePolicies = new Set(
+      this.policyManager.getActivePolicies().map((p) => p.id),
+    );
+    return PolicyTechManager.calculateDefenseBonus(
+      researchedTechs,
+      activePolicies,
+    );
   }
-  
-  // 国策系统额外方法
-  getPolicyHistory(): Policy[] {
-    return []; // 暂时返回空数组
+
+  /**
+   * 获取攻击加成百分比
+   */
+  getAttackBonus(): number {
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const activePolicies = new Set(
+      this.policyManager.getActivePolicies().map((p) => p.id),
+    );
+    return PolicyTechManager.calculateAttackBonus(
+      researchedTechs,
+      activePolicies,
+    );
   }
-  
-  canImplementPolicy(policyId: string): boolean {
-    const policy = PolicyTechManager.getPolicy(policyId as PolicyType);
+
+  /**
+   * 获取外交加成百分比
+   */
+  getDiplomacyBonus(): number {
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const activePolicies = new Set(
+      this.policyManager.getActivePolicies().map((p) => p.id),
+    );
+    return PolicyTechManager.calculateDiplomacyBonus(
+      researchedTechs,
+      activePolicies,
+    );
+  }
+
+  // === 基础状态和方法 ===
+  isAlive(): boolean {
+    return !this._isDead;
+  }
+
+  isTraitor(): boolean {
+    return this._isTraitor;
+  }
+
+  markTraitor(): void {
+    this._isTraitor = true;
+  }
+
+  isDisconnected(): boolean {
+    return this._isDisconnected;
+  }
+
+  markDisconnected(isDisconnected: boolean): void {
+    this._isDisconnected = isDisconnected;
+  }
+
+  hasSpawned(): boolean {
+    return this._hasSpawned;
+  }
+
+  setHasSpawned(hasSpawned: boolean): void {
+    this._hasSpawned = hasSpawned;
+  }
+
+  largestClusterBoundingBox(): { min: Cell; max: Cell } | null {
+    // 简化实现 - 返回所有瓦片的边界框
+    const tiles = Array.from(this._tiles);
+    if (tiles.length === 0) return null;
+
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+
+    for (const tileRef of tiles) {
+      const cell = tileRef.toCell(this.mg);
+      minX = Math.min(minX, cell.x);
+      minY = Math.min(minY, cell.y);
+      maxX = Math.max(maxX, cell.x);
+      maxY = Math.max(maxY, cell.y);
+    }
+
+    return {
+      min: { x: minX, y: minY },
+      max: { x: maxX, y: maxY },
+    };
+  }
+
+  lastTileChange(): Tick {
+    return this._lastTileChange;
+  }
+
+  borderTiles(): ReadonlySet<TileRef> {
+    const borderTiles = new Set<TileRef>();
+
+    for (const tileRef of this._tiles) {
+      const neighbors = this.mg.map().neighbors(tileRef);
+      for (const neighbor of neighbors) {
+        const owner = this.mg.owner(neighbor);
+        if (owner !== this) {
+          borderTiles.add(tileRef);
+          break;
+        }
+      }
+    }
+
+    return borderTiles;
+  }
+
+  // === 科技和研究相关方法 ===
+  availableTechs(): Tech[] {
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    return PREDEFINED_TECHNOLOGIES.filter((tech) =>
+      PolicyTechManager.canResearchTech(tech.id, researchedTechs),
+    );
+  }
+
+  startResearch(techType: TechType): boolean {
+    const tech = PREDEFINED_TECHNOLOGIES.find((t) => t.id === techType);
+    if (!tech) return false;
+
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    if (!PolicyTechManager.canResearchTech(techType, researchedTechs)) {
+      return false;
+    }
+
+    // 检查是否已经在研究
+    const currentTech = this.currentResearchingTech();
+    if (currentTech && currentTech.tech.id === techType) {
+      return false;
+    }
+
+    // 开始研究
+    this.techTreeManager.startResearch(techType);
+    return true;
+  }
+
+  cancelResearch(): boolean {
+    const currentTech = this.currentResearchingTech();
+    if (!currentTech) return false;
+
+    this.techTreeManager.cancelResearch();
+    return true;
+  }
+
+  researchProgress(techType: TechType): number | null {
+    return this.techTreeManager.getTechResearchProgress(techType);
+  }
+
+  private currentResearchingTech(): {
+    tech: Tech;
+    progress: number;
+    remainingTime: number;
+  } | null {
+    const researchingTech = this.techTreeManager.getResearchingTech();
+    if (!researchingTech) return null;
+
+    const progress = this.techTreeManager.getTechResearchProgress(
+      researchingTech.id,
+    );
+    const progressRatio = Math.max(0, Math.min(1, progress / 100));
+    const remainingTime = Math.ceil(
+      researchingTech.researchTime * (1 - progressRatio),
+    );
+
+    return {
+      tech: researchingTech,
+      progress: progress,
+      remainingTime: remainingTime,
+    };
+  }
+
+  currentResearch(): {
+    tech: Tech;
+    progress: number;
+    remainingTime: number;
+  } | null {
+    return this.currentResearchingTech();
+  }
+
+  /**
+   * 获取已解锁的政策列表
+   */
+  getUnlockedPolicies(): PolicyType[] {
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    return PolicyTechManager.getUnlockedPolicies(researchedTechs);
+  }
+
+  /**
+   * 获取研究速度加成
+   */
+  getResearchSpeedMultiplier(): number {
+    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const activePolicies = new Set(
+      this.policyManager.getActivePolicies().map((p) => p.id),
+    );
+
+    let multiplier = 1.0;
+
+    // 科技加成
+    researchedTechs.forEach((techType) => {
+      const tech = PREDEFINED_TECHNOLOGIES.find((t) => t.id === techType);
+      if (tech && tech.researchSpeedMultiplier) {
+        multiplier *= tech.researchSpeedMultiplier;
+      }
+    });
+
+    // 政策加成
+    activePolicies.forEach((policyType) => {
+      const policy = PREDEFINED_POLICIES.find((p) => p.id === policyType);
+      if (policy && policy.researchSpeedMultiplier) {
+        multiplier *= policy.researchSpeedMultiplier;
+      }
+    });
+
+    return multiplier;
+  }
+
+  // 辅助方法：检查是否可以实施政策
+  private canImplementPolicy(policyId: string): boolean {
+    const policy = PolicyTechManager.getPolicy(policyId);
     if (!policy) return false;
-    return this.policyManager.canImplementPolicy(policy as any);
-  }
-  
-  // 科技树系统额外方法
-  canResearchTech(techId: string): boolean {
-    return this.techTreeManager.canResearchTech(techId);
-  }
-  
-  getTechResearchProgress(techId: string): number {
-    return this.techTreeManager.getResearchProgress(techId);
+
+    // 检查是否已经激活
+    const activePolicies = this.policyManager.getActivePolicies();
+    if (activePolicies.some((p) => p.id === policyId)) return false;
+
+    // 检查前置条件
+    if (policy.prerequisites) {
+      for (const prereq of policy.prerequisites) {
+        if (!this.isTechResearched(prereq)) {
+          return false;
+        }
+      }
+    }
+
+    // 检查资金
+    return this.gold() >= policy.cost;
   }
 
   addGold(toAdd: Gold, tile?: TileRef): void {
@@ -1106,9 +1382,12 @@ export class PlayerImpl implements Player {
     }
 
     // 计算原始成本并应用成本降低效果
-    let cost = this.mg.unitInfo(type).cost(this);
-    const reducedCost = Math.max(1, Math.floor(cost * (1 - this.unitCostReduction)));
-    
+    const cost = this.mg.unitInfo(type).cost(this);
+    const reducedCost = Math.max(
+      1,
+      Math.floor(cost * (1 - this.unitCostReduction)),
+    );
+
     const b = new UnitImpl(
       type,
       this.mg,
@@ -1154,7 +1433,10 @@ export class PlayerImpl implements Player {
     }
     // 计算考虑成本降低效果后的价格
     const cost = this.mg.config().unitInfo(unit.type()).cost(this);
-    const reducedCost = Math.max(1, Math.floor(cost * (1 - this.unitCostReduction)));
+    const reducedCost = Math.max(
+      1,
+      Math.floor(cost * (1 - this.unitCostReduction)),
+    );
     if (this._gold < reducedCost) {
       return false;
     }
@@ -1170,13 +1452,13 @@ export class PlayerImpl implements Player {
 
   public buildableUnits(tile: TileRef | null): BuildableUnit[] {
     const validTiles = tile !== null ? this.validStructureSpawnTiles(tile) : [];
-    
+
     // 获取所有单位类型，然后根据unlockedUnits过滤
     let unitTypes = Object.values(UnitType);
     if (this.unlockedUnits !== null) {
-      unitTypes = unitTypes.filter(u => this.unlockedUnits!.has(u));
+      unitTypes = unitTypes.filter((u) => this.unlockedUnits!.has(u));
     }
-    
+
     return unitTypes.map((u) => {
       let canUpgrade: number | false = false;
       if (!this.mg.inSpawnPhase()) {
@@ -1185,11 +1467,14 @@ export class PlayerImpl implements Player {
           canUpgrade = existingUnit.id();
         }
       }
-      
+
       // 计算考虑成本降低效果后的价格
       const baseCost = this.mg.config().unitInfo(u).cost(this);
-      const reducedCost = Math.max(1, Math.floor(baseCost * (1 - this.unitCostReduction)));
-      
+      const reducedCost = Math.max(
+        1,
+        Math.floor(baseCost * (1 - this.unitCostReduction)),
+      );
+
       return {
         type: u,
         canBuild:
@@ -1379,7 +1664,6 @@ export class PlayerImpl implements Player {
 
   markDisconnected(isDisconnected: boolean): void {
     this._isDisconnected = isDisconnected;
-
   }
 
   hash(): number {
@@ -1404,7 +1688,7 @@ export class PlayerImpl implements Player {
       messageType: message.type,
       message: JSON.stringify(message.data),
       playerID: this.smallID(),
-      params: message.data
+      params: message.data,
     });
   }
 
@@ -1495,20 +1779,331 @@ export class PlayerImpl implements Player {
   bestTransportShipSpawn(targetTile: TileRef): TileRef | false {
     return bestShoreDeploymentSource(this.mg, this, targetTile);
   }
+
+  // ==================== 外交和联盟相关方法 ====================
+
+  neighbors(): (Player | TerraNullius)[] {
+    return this.mg.players().filter((p) => this.sharesBorderWith(p));
+  }
+
+  sharesBorderWith(other: Player | TerraNullius): boolean {
+    if (other.isPlayer()) {
+      for (const tile of this._borderTiles) {
+        for (const neighbor of this.mg.neighbors(tile)) {
+          if (this.mg.owner(neighbor) === other) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  relation(other: Player): Relation {
+    if (other === this) return 100;
+    return this.relations.get(other) ?? 50;
+  }
+
+  allRelationsSorted(): { player: Player; relation: Relation }[] {
+    const result: { player: Player; relation: Relation }[] = [];
+    for (const player of this.mg.players()) {
+      if (player !== this) {
+        result.push({
+          player,
+          relation: this.relation(player),
+        });
+      }
+    }
+    return result.sort((a, b) => b.relation - a.relation);
+  }
+
+  updateRelation(other: Player, delta: number): void {
+    const current = this.relation(other);
+    const newRelation = Math.max(0, Math.min(100, current + delta));
+    this.relations.set(other, newRelation);
+  }
+
+  decayRelations(): void {
+    for (const [player, relation] of this.relations.entries()) {
+      if (relation > 50) {
+        this.relations.set(player, Math.max(50, relation - 1));
+      }
+    }
+  }
+
+  isOnSameTeam(other: Player): boolean {
+    return this.team() !== null && this.team() === other.team();
+  }
+
+  isFriendly(other: Player): boolean {
+    return this.isAlliedWith(other) || this.isOnSameTeam(other);
+  }
+
+  team(): Team | null {
+    return this._team;
+  }
+
+  incomingAllianceRequests(): AllianceRequest[] {
+    return this.mg
+      .alliances()
+      .filter((a) => a.recipient() === this && !a.isExpired(this.mg.ticks()))
+      .map((a) => a as AllianceRequest);
+  }
+
+  outgoingAllianceRequests(): AllianceRequest[] {
+    return this.mg
+      .alliances()
+      .filter((a) => a.requester() === this && !a.isExpired(this.mg.ticks()))
+      .map((a) => a as AllianceRequest);
+  }
+
+  alliances(): MutableAlliance[] {
+    return this.mg
+      .alliances()
+      .filter(
+        (a) =>
+          (a.requester() === this || a.recipient() === this) &&
+          !a.isExpired(this.mg.ticks()),
+      ) as MutableAlliance[];
+  }
+
+  expiredAlliances(): Alliance[] {
+    return this._expiredAlliances.filter(
+      (a) => a.requester() === this || a.recipient() === this,
+    );
+  }
+
+  allies(): Player[] {
+    return this.alliances().map((a) => a.other(this));
+  }
+
+  isAlliedWith(other: Player): boolean {
+    return this.alliances().some((a) => a.other(this) === other);
+  }
+
+  allianceWith(other: Player): MutableAlliance | null {
+    const alliance = this.alliances().find((a) => a.other(this) === other);
+    return alliance ?? null;
+  }
+
+  canSendAllianceRequest(other: Player): boolean {
+    // 不能和自己结盟
+    if (this === other) return false;
+
+    // 已经在联盟中
+    if (this.isAlliedWith(other)) return false;
+
+    // 已经在申请中
+    if (this.outgoingAllianceRequests().some((a) => a.recipient() === other))
+      return false;
+
+    // 敌对关系太严重
+    if (this.relation(other) < 20) return false;
+
+    return true;
+  }
+
+  breakAlliance(alliance: Alliance): void {
+    this.mg.expireAlliance(alliance);
+  }
+
+  createAllianceRequest(recipient: Player): AllianceRequest | null {
+    if (!this.canSendAllianceRequest(recipient)) {
+      return null;
+    }
+
+    // 这里需要实现具体的联盟请求创建逻辑
+    // 由于AllianceRequest可能需要特殊构造，这里先返回null表示需要进一步实现
+    return null;
+  }
+
+  // ==================== 目标相关方法 ====================
+
+  canTarget(other: Player): boolean {
+    if (this === other) return false;
+    if (this.isFriendly(other)) return false;
+    return true;
+  }
+
+  target(other: Player): void {
+    if (this.canTarget(other)) {
+      this.targets_.push({
+        tick: this.mg.ticks(),
+        target: other,
+      });
+    }
+  }
+
+  targets(): Player[] {
+    return this.targets_.map((t) => t.target);
+  }
+
+  transitiveTargets(): Player[] {
+    const result = new Set(this.targets_.map((t) => t.target));
+
+    // 添加目标的目标（传递性）
+    for (const target of this.targets_) {
+      for (const targetOfTarget of target.target.targets()) {
+        result.add(targetOfTarget);
+      }
+    }
+
+    return Array.from(result);
+  }
+
+  // ==================== 通信相关方法 ====================
+
+  canSendEmoji(recipient: Player | typeof AllPlayers): boolean {
+    // 可以向所有人或友好玩家发送表情
+    if (recipient === AllPlayers) return true;
+    if (recipient.isPlayer() && this.isFriendly(recipient as Player))
+      return true;
+    return false;
+  }
+
+  outgoingEmojis(): EmojiMessage[] {
+    return this.outgoingEmojis_;
+  }
+
+  sendEmoji(recipient: Player | typeof AllPlayers, emoji: string): void {
+    if (!this.canSendEmoji(recipient)) return;
+
+    const emojiMessage: EmojiMessage = {
+      id: this._pseudo_random.nextID().toString(),
+      emoji,
+      from: this.smallID(),
+      to: recipient === AllPlayers ? -1 : (recipient as Player).smallID(),
+      timestamp: this.mg.ticks(),
+    };
+
+    this.outgoingEmojis_.push(emojiMessage);
+    this.mg.addUpdate({
+      type: GameUpdateType.Emoji,
+      emoji: emojiMessage,
+    });
+  }
+
+  // ==================== 捐赠相关方法 ====================
+
+  canDonateGold(recipient: Player): boolean {
+    if (this === recipient) return false;
+    if (!this.isFriendly(recipient)) return false;
+    return this.gold() > 1000n; // 至少保留1000金币
+  }
+
+  canDonateTroops(recipient: Player): boolean {
+    if (this === recipient) return false;
+    if (!this.isFriendly(recipient)) return false;
+    return this.troops() > 100; // 至少保留100军队
+  }
+
+  donateTroops(recipient: Player, troops: number): boolean {
+    if (!this.canDonateTroops(recipient)) return false;
+    if (troops <= 0) return false;
+
+    const actualTroops = Math.min(troops, this.troops() - 100);
+    this.removeTroops(actualTroops);
+    recipient.addTroops(actualTroops);
+
+    this.sentDonations.push(new Donation(recipient, this.mg.ticks()));
+
+    this.mg.addUpdate({
+      type: GameUpdateType.DisplayEvent,
+      messageType: "donation",
+      playerID: recipient.smallID(),
+      params: {
+        donor: this.smallID(),
+        troops: actualTroops,
+      },
+    });
+
+    return true;
+  }
+
+  donateGold(recipient: Player, gold: Gold): boolean {
+    if (!this.canDonateGold(recipient)) return false;
+    if (gold <= 0n) return false;
+
+    const actualGold = gold > this.gold() - 1000n ? this.gold() - 1000n : gold;
+    if (actualGold <= 0n) return false;
+
+    this.removeGold(actualGold);
+    recipient.addGold(actualGold);
+
+    this.sentDonations.push(new Donation(recipient, this.mg.ticks()));
+
+    this.mg.addUpdate({
+      type: GameUpdateType.DisplayEvent,
+      messageType: "donation",
+      playerID: recipient.smallID(),
+      params: {
+        donor: this.smallID(),
+        gold: actualGold.toString(),
+      },
+    });
+
+    return true;
+  }
+
+  // ==================== 禁运相关方法 ====================
+
+  hasEmbargoAgainst(other: Player): boolean {
+    return this.embargoes.has(other.id());
+  }
+
+  tradingPartners(): Player[] {
+    return this.mg
+      .players()
+      .filter(
+        (p) =>
+          p !== this &&
+          !this.hasEmbargoAgainst(p) &&
+          !p.hasEmbargoAgainst(this) &&
+          this.canTrade(p),
+      );
+  }
+
+  addEmbargo(other: Player, isTemporary: boolean): void {
+    const embargo = new Embargo(other.id(), this.mg.ticks(), isTemporary);
+    this.embargoes.set(other.id(), embargo);
+  }
+
+  getEmbargoes(): Embargo[] {
+    return Array.from(this.embargoes.values());
+  }
+
+  stopEmbargo(other: Player): void {
+    this.embargoes.delete(other.id());
+  }
+
+  endTemporaryEmbargo(other: Player): void {
+    const embargo = this.embargoes.get(other.id());
+    if (embargo && embargo.isTemporary) {
+      this.embargoes.delete(other.id());
+    }
+  }
+
+  canTrade(other: Player): boolean {
+    if (this.hasEmbargoAgainst(other)) return false;
+    if (other.hasEmbargoAgainst(this)) return false;
+    return true;
+  }
+
+  canDeleteUnit(): boolean {
+    const currentTick = this.mg.ticks();
+    return currentTick - this.lastDeleteUnitTick >= 50; // 50 tick冷却时间
+  }
+
+  recordDeleteUnit(): void {
+    this.lastDeleteUnitTick = this.mg.ticks();
+  }
+
+  canEmbargoAll(): boolean {
+    const currentTick = this.mg.ticks();
+    return currentTick - this.lastEmbargoAllTick >= 100; // 100 tick冷却时间
+  }
+
+  recordEmbargoAll(): void {
+    this.lastEmbargoAllTick = this.mg.ticks();
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

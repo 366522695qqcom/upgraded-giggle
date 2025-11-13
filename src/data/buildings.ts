@@ -1,17 +1,185 @@
-import { Building } from '../types/game';
+import { Building } from "../types/game";
 
-export const buildings: Building[] = [  // 资源与经济类  {    id: 'city',    nameZh: '城市',    category: 'resource',    baseCost: { gold: 100, steel: 0, crystal: 0 },    upgradeCost: { gold: 200, steel: 30, crystal: 0 },    effectZh: '人口上限+50，解锁"城市税收"（金币+5/分钟）',    image: 'https://images.unsplash.com/photo-1562778357-58e2feebe9aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjaXR5JTIwc2t5bGluZXxlbnwxfHx8fDE3NjE5MzQwNjR8MA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'factory',    nameZh: '工厂',    category: 'resource',    baseCost: { gold: 150, steel: 50, crystal: 0 },    upgradeCost: { gold: 300, steel: 100, crystal: 10 },    effectZh: '基础产金 80/3分钟，升级后解锁"炼钢炉"（钢铁+5/分钟）',    image: 'https://images.unsplash.com/photo-1655876726270-2caec425d0cd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYWN0b3J5JTIwaW5kdXN0cmlhbCUyMGJ1aWxkaW5nfGVufDF8fHx8MTc2MTk3NTYzNnww&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'port',    nameZh: '港口',    category: 'resource',    baseCost: { gold: 200, steel: 80, crystal: 0 },    upgradeCost: { gold: 400, steel: 150, crystal: 20 },    effectZh: '造战舰（150/50/0 每艘），贸易船产金 120/4分钟',    image: 'https://images.unsplash.com/photo-1605376284303-c4e411aca3a5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwb3J0JTIwaGFyYm9yJTIwc2hpcHN8ZW58MXx8fHwxNzYxOTc1NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'solar-farm',    nameZh: '太阳能农场',    category: 'resource',    baseCost: { gold: 80, steel: 20, crystal: 0 },    upgradeCost: { gold: 160, steel: 40, crystal: 0 },    effectZh: '稳定产金 30/小时，无额外资源消耗',    image: 'https://images.unsplash.com/photo-1642950863398-1fc3600a5313?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb2xhciUyMGZhcm0lMjBlbmVyZ3l8ZW58MXx8fHwxNzYxOTExMTIwfDA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'trade-hub',    nameZh: '贸易枢纽',    category: 'resource',    baseCost: { gold: 300, steel: 100, crystal: 10 },    upgradeCost: { gold: 600, steel: 200, crystal: 30 },    effectZh: '关联建筑产金+25%，解锁"资源兑换"（100金币=1稀土）',    image: 'https://images.unsplash.com/photo-1761805618757-9d2b9552ee32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YXJlaG91c2UlMjBzdG9yYWdlJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'resource-depot',    nameZh: '资源仓库',    category: 'resource',    baseCost: { gold: 120, steel: 30, crystal: 0 },    upgradeCost: { gold: 240, steel: 60, crystal: 10 },    effectZh: '所有资源容量+20%，被掠夺损失-20%',    image: 'https://images.unsplash.com/photo-1761805618757-9d2b9552ee32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YXJlaG91c2UlMjBzdG9yYWdlJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080',  },
+export const buildings: Building[] = [
+  // 资源与经济类
+  {
+    id: "city",
+    nameZh: "城市",
+    category: "resource",
+    baseCost: { gold: 100, steel: 0, crystal: 0 },
+    upgradeCost: { gold: 200, steel: 30, crystal: 0 },
+    effectZh: '人口上限+50，解锁"城市税收"（金币+5/分钟）',
+    image:
+      "https://images.unsplash.com/photo-1562778357-58e2feebe9aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjaXR5JTIwc2t5bGluZXxlbnwxfHx8fDE3NjE5MzQwNjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "factory",
+    nameZh: "工厂",
+    category: "resource",
+    baseCost: { gold: 150, steel: 50, crystal: 0 },
+    upgradeCost: { gold: 300, steel: 100, crystal: 10 },
+    effectZh: '基础产金 80/3分钟，升级后解锁"炼钢炉"（钢铁+5/分钟）',
+    image:
+      "https://images.unsplash.com/photo-1655876726270-2caec425d0cd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYWN0b3J5JTIwaW5kdXN0cmlhbCUyMGJ1aWxkaW5nfGVufDF8fHx8MTc2MTk3NTYzNnww&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "port",
+    nameZh: "港口",
+    category: "resource",
+    baseCost: { gold: 200, steel: 80, crystal: 0 },
+    upgradeCost: { gold: 400, steel: 150, crystal: 20 },
+    effectZh: "造战舰（150/50/0 每艘），贸易船产金 120/4分钟",
+    image:
+      "https://images.unsplash.com/photo-1605376284303-c4e411aca3a5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwb3J0JTIwaGFyYm9yJTIwc2hpcHN8ZW58MXx8fHwxNzYxOTc1NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "solar-farm",
+    nameZh: "太阳能农场",
+    category: "resource",
+    baseCost: { gold: 80, steel: 20, crystal: 0 },
+    upgradeCost: { gold: 160, steel: 40, crystal: 0 },
+    effectZh: "稳定产金 30/小时，无额外资源消耗",
+    image:
+      "https://images.unsplash.com/photo-1642950863398-1fc3600a5313?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb2xhciUyMGZhcm0lMjBlbmVyZ3l8ZW58MXx8fHwxNzYxOTExMTIwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "trade-hub",
+    nameZh: "贸易枢纽",
+    category: "resource",
+    baseCost: { gold: 300, steel: 100, crystal: 10 },
+    upgradeCost: { gold: 600, steel: 200, crystal: 30 },
+    effectZh: '关联建筑产金+25%，解锁"资源兑换"（100金币=1稀土）',
+    image:
+      "https://images.unsplash.com/photo-1761805618757-9d2b9552ee32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YXJlaG91c2UlMjBzdG9yYWdlJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "resource-depot",
+    nameZh: "资源仓库",
+    category: "resource",
+    baseCost: { gold: 120, steel: 30, crystal: 0 },
+    upgradeCost: { gold: 240, steel: 60, crystal: 10 },
+    effectZh: "所有资源容量+20%，被掠夺损失-20%",
+    image:
+      "https://images.unsplash.com/photo-1761805618757-9d2b9552ee32?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YXJlaG91c2UlMjBzdG9yYWdlJTIwYnVpbGRpbmd8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  // 防御与反制类
+  {
+    id: "defense-post",
+    nameZh: "防御岗",
+    category: "defense",
+    baseCost: { gold: 50, steel: 20, crystal: 0 },
+    upgradeCost: { gold: 100, steel: 40, crystal: 0 },
+    effectZh: "敌方进攻速度-15%，伤亡+10%",
+    image:
+      "https://images.unsplash.com/photo-1640806878073-021584770a93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaWxpdGFyeSUyMGRlZmVuc2UlMjBiYXNlfGVufDF8fHx8MTc2MTk3NTYzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "sam-launcher",
+    nameZh: "防空导弹",
+    category: "defense",
+    baseCost: { gold: 400, steel: 200, crystal: 30 },
+    upgradeCost: { gold: 800, steel: 350, crystal: 50 },
+    effectZh: "拦截导弹（原子弹 100%），冷却 7.5秒",
+    image:
+      "https://images.unsplash.com/photo-1648822209097-2b2db75e04a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaXNzaWxlJTIwbGF1bmNoJTIwZmFjaWxpdHl8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "plasma-turret",
+    nameZh: "等离子炮塔",
+    category: "defense",
+    baseCost: { gold: 350, steel: 180, crystal: 20 },
+    upgradeCost: { gold: 700, steel: 300, crystal: 40 },
+    effectZh: "单次伤害 50，射程 150像素",
+    image:
+      "https://images.unsplash.com/photo-1640806878073-021584770a93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaWxpdGFyeSUyMGRlZmVuc2UlMjBiYXNlfGVufDF8fHx8MTc2MTk3NTYzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "bunker",
+    nameZh: "地下掩体",
+    category: "defense",
+    baseCost: { gold: 250, steel: 120, crystal: 0 },
+    upgradeCost: { gold: 500, steel: 200, crystal: 30 },
+    effectZh: "容 1000军队，损失-50%",
+    image:
+      "https://images.unsplash.com/photo-1640806878073-021584770a93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaWxpdGFyeSUyMGRlZmVuc2UlMjBiYXNlfGVufDF8fHx8MTc2MTk3NTYzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  // 特殊功能类
+  {
+    id: "spy-satellite",
+    nameZh: "间谍卫星",
+    category: "special",
+    baseCost: { gold: 600, steel: 150, crystal: 80 },
+    upgradeCost: { gold: 1200, steel: 250, crystal: 120 },
+    effectZh: "每 3分钟显全图 30秒",
+    image:
+      "https://images.unsplash.com/photo-1597120081843-631bddc57076?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXRlbGxpdGUlMjB0ZWNobm9sb2d5JTIwc3BhY2V8ZW58MXx8fHwxNzYxOTc1NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "alliance-embassy",
+    nameZh: "联盟大使馆",
+    category: "special",
+    baseCost: { gold: 300, steel: 80, crystal: 50 },
+    upgradeCost: { gold: 600, steel: 150, crystal: 80 },
+    effectZh: "盟友派军上限 500，共享 10%资源产出",
+    image:
+      "https://images.unsplash.com/photo-1562778357-58e2feebe9aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjaXR5JTIwc2t5bGluZXxlbnwxfHx8fDE3NjE5MzQwNjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "genetic-lab",
+    nameZh: "基因实验室",
+    category: "special",
+    baseCost: { gold: 450, steel: 100, crystal: 60 },
+    upgradeCost: { gold: 900, steel: 200, crystal: 100 },
+    effectZh: '军队属性+10%（6分钟/次），解锁"晶体提炼器"（晶体+3/分钟）',
+    image:
+      "https://images.unsplash.com/photo-1760493828288-d2dbb70d18c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYWJvcmF0b3J5JTIwc2NpZW5jZSUyMHJlc2VhcmNofGVufDF8fHx8MTc2MTkxMjIzOXww&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "quantum-portal",
+    nameZh: "量子传送门",
+    category: "special",
+    baseCost: { gold: 800, steel: 300, crystal: 150 },
+    upgradeCost: { gold: 1600, steel: 500, crystal: 250 },
+    effectZh: "瞬间传军，冷却 8分钟（成对）",
+    image:
+      "https://images.unsplash.com/photo-1597120081843-631bddc57076?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXRlbGxpdGUlMjB0ZWNobm9sb2d5JTIwc3BhY2V8ZW58MXx8fHwxNzYxOTc1NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  // 高级军事设施
+  {
+    id: "missile-silo",
+    nameZh: "导弹发射井",
+    category: "military",
+    baseCost: { gold: 1000, steel: 500, crystal: 0, rareEarth: 10 },
+    upgradeCost: { gold: 2000, steel: 800, crystal: 0, rareEarth: 20 },
+    effectZh: "解锁核弹发射，装填 10分钟",
+    image:
+      "https://images.unsplash.com/photo-1648822209097-2b2db75e04a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaXNzaWxlJTIwbGF1bmNoJTIwZmFjaWxpdHl8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "atom-bomb",
+    nameZh: "原子弹",
+    category: "military",
+    baseCost: { gold: 800, steel: 300, crystal: 0, rareEarth: 5 },
+    effectZh: "小范围打击，毁伤 60%建筑",
+    image:
+      "https://images.unsplash.com/photo-1591200834528-4050ce99fe78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxudWNsZWFyJTIwcG93ZXIlMjBwbGFudHxlbnwxfHx8fDE3NjE5NzU2Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+  {
+    id: "nuclear-reactor",
+    nameZh: "核反应堆",
+    category: "military",
+    baseCost: { gold: 700, steel: 400, crystal: 0, rareEarth: 15 },
+    upgradeCost: { gold: 1400, steel: 600, crystal: 0, rareEarth: 30 },
+    effectZh: "核弹装填时间-40%（优化后 6分钟），被摧毁引发核爆",
+    image:
+      "https://images.unsplash.com/photo-1591200834528-4050ce99fe78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxudWNsZWFyJTIwcG93ZXIlMjBwbGFudHxlbnwxfHx8fDE3NjE5NzU2Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+  },
+];
 
-  // 防御与反制类  {    id: 'defense-post',    nameZh: '防御岗',    category: 'defense',    baseCost: { gold: 50, steel: 20, crystal: 0 },    upgradeCost: { gold: 100, steel: 40, crystal: 0 },    effectZh: '敌方进攻速度-15%，伤亡+10%',    image: 'https://images.unsplash.com/photo-1640806878073-021584770a93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaWxpdGFyeSUyMGRlZmVuc2UlMjBiYXNlfGVufDF8fHx8MTc2MTk3NTYzN3ww&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'sam-launcher',    nameZh: '防空导弹',    category: 'defense',    baseCost: { gold: 400, steel: 200, crystal: 30 },    upgradeCost: { gold: 800, steel: 350, crystal: 50 },    effectZh: '拦截导弹（原子弹 100%），冷却 7.5秒',    image: 'https://images.unsplash.com/photo-1648822209097-2b2db75e04a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaXNzaWxlJTIwbGF1bmNoJTIwZmFjaWxpdHl8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'plasma-turret',    nameZh: '等离子炮塔',    category: 'defense',    baseCost: { gold: 350, steel: 180, crystal: 20 },    upgradeCost: { gold: 700, steel: 300, crystal: 40 },    effectZh: '单次伤害 50，射程 150像素',    image: 'https://images.unsplash.com/photo-1640806878073-021584770a93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaWxpdGFyeSUyMGRlZmVuc2UlMjBiYXNlfGVufDF8fHx8MTc2MTk3NTYzN3ww&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'bunker',    nameZh: '地下掩体',    category: 'defense',    baseCost: { gold: 250, steel: 120, crystal: 0 },    upgradeCost: { gold: 500, steel: 200, crystal: 30 },    effectZh: '容 1000军队，损失-50%',    image: 'https://images.unsplash.com/photo-1640806878073-021584770a93?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaWxpdGFyeSUyMGRlZmVuc2UlMjBiYXNlfGVufDF8fHx8MTc2MTk3NTYzN3ww&ixlib=rb-4.1.0&q=80&w=1080',  },
-
-  // 特殊功能类  {    id: 'spy-satellite',    nameZh: '间谍卫星',    category: 'special',    baseCost: { gold: 600, steel: 150, crystal: 80 },    upgradeCost: { gold: 1200, steel: 250, crystal: 120 },    effectZh: '每 3分钟显全图 30秒',    image: 'https://images.unsplash.com/photo-1597120081843-631bddc57076?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXRlbGxpdGUlMjB0ZWNobm9sb2d5JTIwc3BhY2V8ZW58MXx8fHwxNzYxOTc1NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'alliance-embassy',    nameZh: '联盟大使馆',    category: 'special',    baseCost: { gold: 300, steel: 80, crystal: 50 },    upgradeCost: { gold: 600, steel: 150, crystal: 80 },    effectZh: '盟友派军上限 500，共享 10%资源产出',    image: 'https://images.unsplash.com/photo-1562778357-58e2feebe9aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjaXR5JTIwc2t5bGluZXxlbnwxfHx8fDE3NjE5MzQwNjR8MA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'genetic-lab',    nameZh: '基因实验室',    category: 'special',    baseCost: { gold: 450, steel: 100, crystal: 60 },    upgradeCost: { gold: 900, steel: 200, crystal: 100 },    effectZh: '军队属性+10%（6分钟/次），解锁"晶体提炼器"（晶体+3/分钟）',    image: 'https://images.unsplash.com/photo-1760493828288-d2dbb70d18c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYWJvcmF0b3J5JTIwc2NpZW5jZSUyMHJlc2VhcmNofGVufDF8fHx8MTc2MTkxMjIzOXww&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'quantum-portal',    nameZh: '量子传送门',    category: 'special',    baseCost: { gold: 800, steel: 300, crystal: 150 },    upgradeCost: { gold: 1600, steel: 500, crystal: 250 },    effectZh: '瞬间传军，冷却 8分钟（成对）',    image: 'https://images.unsplash.com/photo-1597120081843-631bddc57076?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYXRlbGxpdGUlMjB0ZWNobm9sb2d5JTIwc3BhY2V8ZW58MXx8fHwxNzYxOTc1NjM4fDA&ixlib=rb-4.1.0&q=80&w=1080',  },
-
-  // 高级军事设施  {    id: 'missile-silo',    nameZh: '导弹发射井',    category: 'military',    baseCost: { gold: 1000, steel: 500, crystal: 0, rareEarth: 10 },    upgradeCost: { gold: 2000, steel: 800, crystal: 0, rareEarth: 20 },    effectZh: '解锁核弹发射，装填 10分钟',    image: 'https://images.unsplash.com/photo-1648822209097-2b2db75e04a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaXNzaWxlJTIwbGF1bmNoJTIwZmFjaWxpdHl8ZW58MXx8fHwxNzYxOTc1NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'atom-bomb',    nameZh: '原子弹',    category: 'military',    baseCost: { gold: 800, steel: 300, crystal: 0, rareEarth: 5 },    effectZh: '小范围打击，毁伤 60%建筑',    image: 'https://images.unsplash.com/photo-1591200834528-4050ce99fe78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxudWNsZWFyJTIwcG93ZXIlMjBwbGFudHxlbnwxfHx8fDE3NjE5NzU2Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080',  },  {    id: 'nuclear-reactor',    nameZh: '核反应堆',    category: 'military',    baseCost: { gold: 700, steel: 400, crystal: 0, rareEarth: 15 },    upgradeCost: { gold: 1400, steel: 600, crystal: 0, rareEarth: 30 },    effectZh: '核弹装填时间-40%（优化后 6分钟），被摧毁引发核爆',    image: 'https://images.unsplash.com/photo-1591200834528-4050ce99fe78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxudWNsZWFyJTIwcG93ZXIlMjBwbGFudHxlbnwxfHx8fDE3NjE5NzU2Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080',  },];
-
-export const getCategoryBuildings = (category: Building['category']) => {
-  return buildings.filter(b => b.category === category);
+export const getCategoryBuildings = (category: Building["category"]) => {
+  return buildings.filter((b) => b.category === category);
 };
 
 export const getBuildingById = (id: string) => {
-  return buildings.find(b => b.id === id);
+  return buildings.find((b) => b.id === id);
 };

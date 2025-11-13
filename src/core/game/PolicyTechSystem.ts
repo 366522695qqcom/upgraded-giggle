@@ -1,12 +1,12 @@
-import { Gold, Player, Tick } from './Game';
+import { Gold, Player, Tick } from "./Game";
 
 // 国策类别
 export enum PolicyCategory {
-  ECONOMIC = 'Economic',
-  MILITARY = 'Military',
-  CULTURAL = 'Cultural',
-  DIPLOMATIC = 'Diplomatic',
-  INFRASTRUCTURE = 'Infrastructure',
+  ECONOMIC = "Economic",
+  MILITARY = "Military",
+  CULTURAL = "Cultural",
+  DIPLOMATIC = "Diplomatic",
+  INFRASTRUCTURE = "Infrastructure",
 }
 
 // 国策接口
@@ -39,11 +39,11 @@ export interface PolicyEffect {
 
 // 科技类别
 export enum TechCategory {
-  MILITARY = 'Military',
-  ECONOMY = 'Economy',
-  SCIENCE = 'Science',
-  INFRASTRUCTURE = 'Infrastructure',
-  SPECIAL = 'Special',
+  MILITARY = "Military",
+  ECONOMY = "Economy",
+  SCIENCE = "Science",
+  INFRASTRUCTURE = "Infrastructure",
+  SPECIAL = "Special",
 }
 
 // 科技接口
@@ -110,11 +110,14 @@ export class PolicyManager {
   // 检查并应用国策持续时间效果
   update(): void {
     const playerImpl = this.player as any;
-    const currentTick = playerImpl?._game?.ticks() || 0;
+    const currentTick = playerImpl?._game?.ticks() ?? 0;
     const expiredPolicies: string[] = [];
 
     this.activePolicies.forEach((policy) => {
-      if (policy.duration > 0 && currentTick - policy.activationTick >= policy.duration) {
+      if (
+        policy.duration > 0 &&
+        currentTick - policy.activationTick >= policy.duration
+      ) {
         // 国策到期，恢复效果
         for (const effect of policy.effects) {
           effect.revert(this.player);
@@ -128,42 +131,42 @@ export class PolicyManager {
       this.activePolicies.delete(id);
     }
   }
-  
+
   // 取消国策
   cancelPolicy(policyId: string): boolean {
     const policy = this.activePolicies.get(policyId);
     if (!policy) return false;
-    
+
     // 撤销效果
     for (const effect of policy.effects) {
       effect.revert(this.player);
     }
-    
+
     // 移除国策
     this.activePolicies.delete(policyId);
-    
+
     return true;
   }
-  
+
   // 获取指定的活跃国策
   getActivePolicy(policyId: string): Policy | undefined {
     return this.activePolicies.get(policyId);
   }
-  
+
   // 检查是否可以实施国策
   canImplementPolicy(policy: Policy): boolean {
     // 检查是否已经激活
     if (this.activePolicies.has(policy.id)) {
       return false;
     }
-    
+
     // 检查要求
     for (const req of policy.requirements) {
       if (!req.check(this.player)) {
         return false;
       }
     }
-    
+
     // 检查成本
     const playerImpl = this.player as any;
     return playerImpl?.gold() >= policy.cost || false;
@@ -189,7 +192,7 @@ export class TechTreeManager {
 
   constructor(player: Player, techs: Technology[]) {
     this.player = player;
-    techs.forEach(tech => {
+    techs.forEach((tech) => {
       this.technologies.set(tech.id, tech);
     });
   }
@@ -225,12 +228,12 @@ export class TechTreeManager {
 
     return true;
   }
-  
+
   // 获取科技
   getTechnology(techId: string): Technology | undefined {
     return this.technologies.get(techId);
   }
-  
+
   // 检查科技是否正在研究中
   isResearching(techId: string): boolean {
     return this.researchingTech?.id === techId;
@@ -243,8 +246,9 @@ export class TechTreeManager {
     // 注意：研究进度将在外部更新
     // 这里只保留研究完成的逻辑，进度计算由PlayerImpl管理
     const playerImpl = this.player as any;
-    const researchProgress = playerImpl?.getTechResearchProgress?.(this.researchingTech.id) || 0;
-    
+    const researchProgress =
+      playerImpl?.getTechResearchProgress?.(this.researchingTech.id) ?? 0;
+
     if (researchProgress >= 100) {
       this.completeResearch();
     }
@@ -256,15 +260,19 @@ export class TechTreeManager {
 
     // 标记为已研究
     this.researchingTech.isResearched = true;
-    
+
     // 应用科技效果
     for (const effect of this.researchingTech.effects) {
       effect.apply(this.player);
     }
-    
+
     // 更新PlayerImpl中的已研究科技集合
     const playerImpl = this.player as any;
-    if (playerImpl && playerImpl.researchedTechs && 'add' in playerImpl.researchedTechs) {
+    if (
+      playerImpl &&
+      playerImpl.researchedTechs &&
+      "add" in playerImpl.researchedTechs
+    ) {
       playerImpl.researchedTechs.add(this.researchingTech.id);
     }
 
@@ -279,7 +287,9 @@ export class TechTreeManager {
 
   // 获取已研究的科技
   getResearchedTechnologies(): Technology[] {
-    return Array.from(this.technologies.values()).filter(tech => tech.isResearched);
+    return Array.from(this.technologies.values()).filter(
+      (tech) => tech.isResearched,
+    );
   }
 
   // 获取当前正在研究的科技

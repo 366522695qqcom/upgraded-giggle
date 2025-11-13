@@ -534,15 +534,19 @@ export interface Player {
   cancelPolicy(policyType: PolicyType): boolean;
   policyRemainingDuration(policyType: PolicyType): number | null;
   updatePolicyAndTech(): void;
-  
+
   // 科技树系统相关方法
   researchedTechs(): Tech[];
-  currentResearch(): { tech: Tech; progress: number; remainingTime: number } | null;
+  currentResearch(): {
+    tech: Tech;
+    progress: number;
+    remainingTime: number;
+  } | null;
   availableTechs(): Tech[];
   startResearch(techType: TechType): boolean;
   cancelResearch(): boolean;
   researchProgress(techType: TechType): number | null;
-  
+
   // 效果计算相关方法
   getEffectiveGoldProductionRate(): number;
   getEffectiveTroopTrainingRate(): number;
@@ -706,6 +710,9 @@ export interface Game extends GameMap {
   expireAlliance(alliance: Alliance): void;
 
   // Game State
+  /**
+   * 获取当前游戏的tick数
+   */
   ticks(): Tick;
   inSpawnPhase(): boolean;
   executeNextTick(): GameUpdates;
@@ -932,6 +939,29 @@ export enum MessageType {
   RESEARCH_STARTED,
   ENACT_POLICY,
   START_RESEARCH,
+  MOVE_UNIT,
+  ATTACK,
+  TRAIN_UNIT,
+  BUILD_CITY,
+  UPGRADE_CITY,
+  TRADE_RESOURCES,
+  DECLARE_WAR,
+  SEND_DIPLOMATIC_MESSAGE,
+  GAME_ERROR,
+}
+
+// 基础消息接口
+export interface Message {
+  type: MessageType;
+  data?: any;
+}
+
+// 游戏消息接口
+export interface GameMessage {
+  type: MessageType;
+  senderId?: PlayerID;
+  data?: any;
+  timestamp?: number;
 }
 
 // Message categories used for filtering events in the EventsDisplay
@@ -970,6 +1000,21 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.SENT_TROOPS_TO_PLAYER]: MessageCategory.TRADE,
   [MessageType.RECEIVED_TROOPS_FROM_PLAYER]: MessageCategory.TRADE,
   [MessageType.CHAT]: MessageCategory.CHAT,
+  [MessageType.POLICY_ENACTED]: MessageCategory.CHAT,
+  [MessageType.POLICY_EXPIRED]: MessageCategory.CHAT,
+  [MessageType.TECH_RESEARCHED]: MessageCategory.CHAT,
+  [MessageType.RESEARCH_STARTED]: MessageCategory.CHAT,
+  [MessageType.ENACT_POLICY]: MessageCategory.CHAT,
+  [MessageType.START_RESEARCH]: MessageCategory.CHAT,
+  [MessageType.MOVE_UNIT]: MessageCategory.CHAT,
+  [MessageType.ATTACK]: MessageCategory.ATTACK,
+  [MessageType.TRAIN_UNIT]: MessageCategory.CHAT,
+  [MessageType.BUILD_CITY]: MessageCategory.CHAT,
+  [MessageType.UPGRADE_CITY]: MessageCategory.CHAT,
+  [MessageType.TRADE_RESOURCES]: MessageCategory.TRADE,
+  [MessageType.DECLARE_WAR]: MessageCategory.ATTACK,
+  [MessageType.SEND_DIPLOMATIC_MESSAGE]: MessageCategory.CHAT,
+  [MessageType.GAME_ERROR]: MessageCategory.CHAT,
 } as const;
 
 /**

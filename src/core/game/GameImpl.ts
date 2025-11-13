@@ -11,10 +11,12 @@ import {
   ColoredTeams,
   Duos,
   EmojiMessage,
+  EnactPolicyMessageData,
   Execution,
   Game,
   GameMode,
   GameUpdates,
+  Message,
   MessageType,
   MutableAlliance,
   Nation,
@@ -22,10 +24,9 @@ import {
   PlayerID,
   PlayerInfo,
   PlayerType,
-  PolicyType,
   Quads,
+  StartResearchMessageData,
   Team,
-  TechType,
   TerrainType,
   TerraNullius,
   Trios,
@@ -43,7 +44,6 @@ import { StatsImpl } from "./StatsImpl";
 import { assignTeams } from "./TeamAssignment";
 import { TerraNulliusImpl } from "./TerraNulliusImpl";
 import { UnitGrid, UnitPredicate } from "./UnitGrid";
-import { EnactPolicyMessageData, Message, StartResearchMessageData } from "./Game";
 
 export function createGame(
   humans: PlayerInfo[],
@@ -332,12 +332,12 @@ export class GameImpl implements Game {
 
   executeNextTick(): GameUpdates {
     this.updates = createGameUpdatesMap();
-    
+
     // 更新所有玩家的国策和科技树系统
     for (const player of this._players.values()) {
       player.updatePolicyAndTech();
     }
-    
+
     this.execs.forEach((e) => {
       if (
         (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
@@ -537,17 +537,22 @@ export class GameImpl implements Game {
       throw new Error("Cannot relinquish water");
     }
 
-    const previousOwner = this.owner(tile) as PlayerImpl;
-    previousOwner._lastTileChange = this._ticks;
-    previousOwner._tiles.delete(tile);
-    previousOwner._borderTiles.delete(tile);
+    const owner = this.owner(tile);
+    // 使用类型保护确保owner是PlayerImpl实例
+    if (owner instanceof PlayerImpl) {
+      owner._lastTileChange = this._ticks;
+      owner._tiles.delete(tile);
+      owner._borderTiles.delete(tile);
 
-    this._map.setOwnerID(tile, 0);
-    this.updateBorders(tile);
-    this.addUpdate({
-      type: GameUpdateType.Tile,
-      update: this.toTileUpdate(tile),
-    });
+      this._map.setOwnerID(tile, 0);
+      this.updateBorders(tile);
+      this.addUpdate({
+        type: GameUpdateType.Tile,
+        update: this.toTileUpdate(tile),
+      });
+    } else {
+      console.warn("relinquish: owner is not PlayerImpl instance");
+    }
   }
 
   private updateBorders(tile: TileRef) {
@@ -885,7 +890,7 @@ export class GameImpl implements Game {
   railNetwork(): RailNetwork {
     return this._railNetwork;
   }
-  
+
   // 处理玩家消息
   handlePlayerMessage(player: Player, message: Message): void {
     switch (message.type) {
@@ -923,13 +928,16 @@ export class GameImpl implements Game {
         console.warn(`Unknown message type: ${message.type}`);
     }
   }
-  
+
   // 处理国策实施
-  private handleEnactPolicy(player: Player, data: EnactPolicyMessageData): void {
+  private handleEnactPolicy(
+    player: Player,
+    data: EnactPolicyMessageData,
+  ): void {
     const playerImpl = player as PlayerImpl;
     if (playerImpl) {
       const success = playerImpl.enactPolicy(data.policyType);
-      
+
       if (success) {
         // 广播国策实施成功的消息
         this.broadcastGameMessage({
@@ -937,28 +945,31 @@ export class GameImpl implements Game {
           senderId: player.id(),
           data: {
             policyType: data.policyType,
-            playerId: player.id()
+            playerId: player.id(),
           },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } else {
         // 发送错误消息给玩家
         playerImpl.sendMessage({
           type: MessageType.GAME_ERROR,
           data: {
-            error: '无法实施国策：条件不满足或资金不足'
-          }
+            error: "无法实施国策：条件不满足或资金不足",
+          },
         });
       }
     }
   }
-  
+
   // 处理科技研究开始
-  private handleStartResearch(player: Player, data: StartResearchMessageData): void {
-    const playerImpl = player as PlayerImpl;
-    if (playerImpl) {
-      const success = playerImpl.startResearch(data.techType);
-      
+  private handleStartResearch(
+    player: Player,
+    data: StartResearchMessageData,
+  ): void {
+    // 使用类型保护确保player是PlayerImpl实例
+    if (player instanceof PlayerImpl) {
+      const success = player.startResearch(data.techType);
+
       if (success) {
         // 广播研究开始的消息
         this.broadcastGameMessage({
@@ -966,22 +977,24 @@ export class GameImpl implements Game {
           senderId: player.id(),
           data: {
             techType: data.techType,
-            playerId: player.id()
+            playerId: player.id(),
           },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } else {
         // 发送错误消息给玩家
-        playerImpl.sendMessage({
+        player.sendMessage({
           type: MessageType.GAME_ERROR,
           data: {
-            error: '无法开始研究：前置条件不满足或资金不足'
-          }
+            error: "无法开始研究：前置条件不满足或资金不足",
+          },
         });
       }
+    } else {
+      console.warn("handleStartResearch: player is not PlayerImpl instance");
     }
   }
-  
+
   // 广播游戏消息
   private broadcastGameMessage(message: GameMessage): void {
     this.addUpdate({
@@ -989,10 +1002,10 @@ export class GameImpl implements Game {
       messageType: message.type,
       message: JSON.stringify(message.data),
       playerID: null,
-      params: message.data
+      params: message.data,
     });
   }
-  
+
   conquerPlayer(conqueror: Player, conquered: Player) {
     const gold = conquered.gold();
     this.displayMessage(

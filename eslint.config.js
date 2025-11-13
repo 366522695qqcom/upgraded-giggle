@@ -30,6 +30,8 @@ export default [
             "postcss.config.js",
             "tailwind.config.js",
             "webpack.config.js",
+            "webpack.simple.js",
+            "src/client/test-entry.js",
           ],
         },
         tsconfigRootDir: import.meta.dirname,

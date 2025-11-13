@@ -1,5 +1,4 @@
-import { Game, Policy, PolicyType, Tech, TechType, Gold, UnitType, Player } from './Game';
-import { PolicyEffect, TechEffect, PolicyRequirement } from './PolicyTechSystem';
+import { Player, Policy, PolicyType, Tech, TechType, UnitType } from "./Game";
 
 // 国策实现
 export const Policies: Record<PolicyType, Policy> = {
@@ -33,7 +32,7 @@ export const Policies: Record<PolicyType, Policy> = {
     cost: 800n,
     duration: 25,
     effects: {
-      goldProductionMultiplier: 1.20,
+      goldProductionMultiplier: 1.2,
       troopTrainingMultiplier: 0.9,
     },
   },
@@ -328,15 +327,15 @@ export const Techs: Record<TechType, Tech> = {
 // 国策和科技管理器类
 export class PolicyTechManager {
   private player: Player | null = null;
-  
+
   constructor(player?: Player) {
-    this.player = player || null;
+    this.player = player ?? null;
   }
-  
+
   setPlayer(player: Player): void {
     this.player = player;
   }
-  
+
   // 获取所有可用的国策
   static getAllPolicies(): Policy[] {
     return Object.values(Policies);
@@ -358,25 +357,33 @@ export class PolicyTechManager {
   }
 
   // 检查科技是否满足前置条件
-  static canResearchTech(techType: TechType, researchedTechs: Set<TechType>): boolean {
+  static canResearchTech(
+    techType: TechType,
+    researchedTechs: Set<TechType>,
+  ): boolean {
     const tech = Techs[techType];
     if (!tech || researchedTechs.has(techType)) return false;
-    
+
     // 检查所有前置科技是否已研究
     if (tech.prerequisites) {
-      return tech.prerequisites.every(prereq => researchedTechs.has(prereq));
+      return tech.prerequisites.every((prereq) => researchedTechs.has(prereq));
     }
     return true;
   }
 
   // 检查国策是否满足前置条件
-  static canEnactPolicy(policyType: PolicyType, researchedTechs: Set<TechType>): boolean {
+  static canEnactPolicy(
+    policyType: PolicyType,
+    researchedTechs: Set<TechType>,
+  ): boolean {
     const policy = Policies[policyType];
     if (!policy) return false;
-    
+
     // 检查所有前置科技是否已研究
     if (policy.prerequisites) {
-      return policy.prerequisites.every(prereq => researchedTechs.has(prereq));
+      return policy.prerequisites.every((prereq) =>
+        researchedTechs.has(prereq),
+      );
     }
     return true;
   }
@@ -384,185 +391,187 @@ export class PolicyTechManager {
   // 获取已解锁的所有单位
   static getUnlockedUnits(researchedTechs: Set<TechType>): UnitType[] {
     const unlockedUnits = new Set<UnitType>();
-    
+
     // 默认解锁基础单位
     unlockedUnits.add(UnitType.Infantry);
     unlockedUnits.add(UnitType.Cavalry);
     unlockedUnits.add(UnitType.Archer);
-    
-    researchedTechs.forEach(techType => {
+
+    researchedTechs.forEach((techType) => {
       const tech = Techs[techType];
       if (tech?.effects?.unlockedUnits) {
-        tech.effects.unlockedUnits.forEach(unit => {
+        tech.effects.unlockedUnits.forEach((unit) => {
           unlockedUnits.add(unit);
         });
       }
     });
-    
+
     return Array.from(unlockedUnits);
   }
 
   // 获取已解锁的所有国策
   static getUnlockedPolicies(researchedTechs: Set<TechType>): PolicyType[] {
     return Object.values(Policies)
-      .filter(policy => {
+      .filter((policy) => {
         // 没有前置条件或者所有前置科技都已研究
         if (!policy.prerequisites) return true;
-        return policy.prerequisites.every(prereq => researchedTechs.has(prereq));
+        return policy.prerequisites.every((prereq) =>
+          researchedTechs.has(prereq),
+        );
       })
-      .map(policy => policy.type);
+      .map((policy) => policy.type);
   }
 
   // 计算研究速度倍率
   static calculateResearchSpeedMultiplier(
-    researchedTechs: Set<TechType>, 
-    activePolicies: Set<PolicyType>
+    researchedTechs: Set<TechType>,
+    activePolicies: Set<PolicyType>,
   ): number {
     let multiplier = 1.0;
-    
+
     // 添加科技带来的研究速度加成
-    researchedTechs.forEach(techType => {
+    researchedTechs.forEach((techType) => {
       const tech = Techs[techType];
       if (tech?.effects?.researchSpeedMultiplier) {
         multiplier *= tech.effects.researchSpeedMultiplier;
       }
     });
-    
+
     // 添加国策带来的研究速度加成
-    activePolicies.forEach(policyType => {
+    activePolicies.forEach((policyType) => {
       const policy = Policies[policyType];
       if (policy?.effects?.researchSpeedMultiplier) {
         multiplier *= policy.effects.researchSpeedMultiplier;
       }
     });
-    
+
     return multiplier;
   }
-  
+
   // 计算金币产出倍率
   static calculateGoldProductionMultiplier(
     researchedTechs: Set<TechType>,
-    activePolicies: Set<PolicyType>
+    activePolicies: Set<PolicyType>,
   ): number {
     let multiplier = 1.0;
-    
+
     // 添加科技带来的金币产出加成
-    researchedTechs.forEach(techType => {
+    researchedTechs.forEach((techType) => {
       const tech = Techs[techType];
       if (tech?.effects?.goldProductionMultiplier) {
         multiplier *= tech.effects.goldProductionMultiplier;
       }
     });
-    
+
     // 添加国策带来的金币产出加成
-    activePolicies.forEach(policyType => {
+    activePolicies.forEach((policyType) => {
       const policy = Policies[policyType];
       if (policy?.effects?.goldProductionMultiplier) {
         multiplier *= policy.effects.goldProductionMultiplier;
       }
     });
-    
+
     return multiplier;
   }
-  
+
   // 计算军队训练速度倍率
   static calculateTroopTrainingMultiplier(
     researchedTechs: Set<TechType>,
-    activePolicies: Set<PolicyType>
+    activePolicies: Set<PolicyType>,
   ): number {
     let multiplier = 1.0;
-    
+
     // 添加科技带来的训练速度加成
-    researchedTechs.forEach(techType => {
+    researchedTechs.forEach((techType) => {
       const tech = Techs[techType];
       if (tech?.effects?.troopTrainingMultiplier) {
         multiplier *= tech.effects.troopTrainingMultiplier;
       }
     });
-    
+
     // 添加国策带来的训练速度加成
-    activePolicies.forEach(policyType => {
+    activePolicies.forEach((policyType) => {
       const policy = Policies[policyType];
       if (policy?.effects?.troopTrainingMultiplier) {
         multiplier *= policy.effects.troopTrainingMultiplier;
       }
     });
-    
+
     return multiplier;
   }
-  
+
   // 计算单位成本降低
   static calculateUnitCostReduction(
     researchedTechs: Set<TechType>,
-    activePolicies: Set<PolicyType>
+    activePolicies: Set<PolicyType>,
   ): number {
     let reduction = 0.0;
-    
+
     // 添加科技带来的成本降低
-    researchedTechs.forEach(techType => {
+    researchedTechs.forEach((techType) => {
       const tech = Techs[techType];
       if (tech?.effects?.unitCostReduction) {
         reduction += tech.effects.unitCostReduction;
       }
     });
-    
+
     // 添加国策带来的成本降低
-    activePolicies.forEach(policyType => {
+    activePolicies.forEach((policyType) => {
       const policy = Policies[policyType];
       if (policy?.effects?.unitCostReduction) {
         reduction += policy.effects.unitCostReduction;
       }
     });
-    
+
     // 确保降低不会超过100%
     return Math.min(reduction, 0.99);
   }
-  
+
   // 计算攻击加成
   static calculateAttackBonus(
     researchedTechs: Set<TechType>,
-    activePolicies: Set<PolicyType>
+    activePolicies: Set<PolicyType>,
   ): number {
     let bonus = 0.0;
-    
-    researchedTechs.forEach(techType => {
+
+    researchedTechs.forEach((techType) => {
       const tech = Techs[techType];
       if (tech?.effects?.attackBonus) {
         bonus += tech.effects.attackBonus;
       }
     });
-    
-    activePolicies.forEach(policyType => {
+
+    activePolicies.forEach((policyType) => {
       const policy = Policies[policyType];
       if (policy?.effects?.attackBonus) {
         bonus += policy.effects.attackBonus;
       }
     });
-    
+
     return bonus;
   }
-  
+
   // 计算防御加成
   static calculateDefenseBonus(
     researchedTechs: Set<TechType>,
-    activePolicies: Set<PolicyType>
+    activePolicies: Set<PolicyType>,
   ): number {
     let bonus = 0.0;
-    
-    researchedTechs.forEach(techType => {
+
+    researchedTechs.forEach((techType) => {
       const tech = Techs[techType];
       if (tech?.effects?.defenseBonus) {
         bonus += tech.effects.defenseBonus;
       }
     });
-    
-    activePolicies.forEach(policyType => {
+
+    activePolicies.forEach((policyType) => {
       const policy = Policies[policyType];
       if (policy?.effects?.defenseBonus) {
         bonus += policy.effects.defenseBonus;
       }
     });
-    
+
     return bonus;
   }
 }
