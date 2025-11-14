@@ -53,7 +53,7 @@ export default (env, argv) => {
         },
         // 处理图像和其他资源文件
         {
-          test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$/,
+          test: /\.(png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot)$/,
           use: [
             {
               loader: "file-loader",
@@ -61,6 +61,50 @@ export default (env, argv) => {
                 name: "[name].[ext]",
                 outputPath: "assets/",
               },
+            },
+          ],
+        },
+        // 处理音频文件
+        {
+          test: /\.(mp3|wav|ogg)$/,
+          use: [
+            {
+              loader: "file-loader",
+              options: {
+                name: "[name].[ext]",
+                outputPath: "assets/",
+              },
+            },
+          ],
+        },
+        // 处理XML文件
+        {
+          test: /\.xml$/,
+          use: [
+            {
+              loader: "file-loader",
+              options: {
+                name: "[name].[ext]",
+                outputPath: "assets/",
+              },
+            },
+          ],
+        },
+        // 处理TXT文件
+        {
+          test: /\.txt$/,
+          use: [
+            {
+              loader: "raw-loader",
+            },
+          ],
+        },
+        // 处理Markdown文件
+        {
+          test: /\.md$/,
+          use: [
+            {
+              loader: "raw-loader",
             },
           ],
         },
