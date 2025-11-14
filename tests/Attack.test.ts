@@ -156,8 +156,43 @@ describe("Attack race condition with alliance requests", () => {
   });
 
   it("should not mark attacker as traitor when alliance is formed after attack starts", async () => {
+    // 调试：添加详细的调试输出
+    console.log("=== 调试FFA模式下的联盟请求 ===");
+    console.log(
+      `playerA.canSendAllianceRequest(playerB): ${playerA.canSendAllianceRequest(playerB)}`,
+    );
+    console.log(`playerA.isFriendly(playerB): ${playerA.isFriendly(playerB)}`);
+    console.log(
+      `playerA.isAlliedWith(playerB): ${playerA.isAlliedWith(playerB)}`,
+    );
+    console.log(
+      `playerA.isOnSameTeam(playerB): ${playerA.isOnSameTeam(playerB)}`,
+    );
+    console.log(
+      `playerA.allianceWith(playerB): ${playerA.allianceWith(playerB)}`,
+    );
+    console.log(`playerA与playerB已经结盟: ${playerA.isAlliedWith(playerB)}`);
+
+    // 调试canSendAllianceRequest的具体条件
+    console.log("=== canSendAllianceRequest条件检查 ===");
+    console.log(`playerA != playerB: ${playerA !== playerB}`);
+    console.log(
+      `!playerA.isAlliedWith(playerB): ${!playerA.isAlliedWith(playerB)}`,
+    );
+    console.log(
+      `!playerA.isFriendly(playerB): ${!playerA.isFriendly(playerB)}`,
+    );
+
+    // 检查对方是否断线
+    const playerBInfo = game.players().find((p) => p.id() === playerB.id());
+    console.log(`playerB是否存在: ${playerBInfo !== undefined}`);
+    console.log(`playerB是否断线: ${playerB.isDisconnected()}`);
+
     // Player A sends alliance request to Player B
     const allianceRequest = playerA.createAllianceRequest(playerB);
+    console.log(
+      `联盟请求创建结果: ${allianceRequest !== null ? "成功" : "失败"}`,
+    );
     expect(allianceRequest).not.toBeNull();
 
     // Player A attacks Player B

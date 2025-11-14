@@ -21,6 +21,7 @@ import {
   ColoredTeams,
   Embargo,
   EmojiMessage,
+  GameMode,
   Gold,
   Message,
   MessageType,
@@ -74,7 +75,7 @@ class Donation {
   ) {}
 }
 
-export class PlayerImpl implements Player {
+export class PlayerImpl extends Player {
   public _lastTileChange: number = 0;
   public _pseudo_random: PseudoRandom;
 
@@ -123,6 +124,7 @@ export class PlayerImpl implements Player {
 
   private _hasSpawned = false;
   private _isDisconnected = false;
+  private _isTraitor = false;
 
   constructor(
     private mg: GameImpl,
@@ -131,6 +133,7 @@ export class PlayerImpl implements Player {
     startTroops: number,
     private readonly _team: Team | null,
   ) {
+    super();
     this._name = sanitizeUsername(playerInfo.name);
     this._troops = toInt(startTroops);
     this._gold = 0n;
@@ -965,7 +968,7 @@ export class PlayerImpl implements Player {
     this.embargoes.set(other.id(), {
       createdAt: this.mg.ticks(),
       isTemporary: isTemporary,
-      target: other,
+      target: other.id(),
     });
   }
 
@@ -1013,7 +1016,15 @@ export class PlayerImpl implements Player {
     if (other.isDisconnected()) {
       return false;
     }
-    return this.isOnSameTeam(other) || this.isAlliedWith(other);
+
+    // In FFA mode, allow alliances between any players
+    // Only check team relationship in Team mode
+    if (this.mg.config().gameConfig().gameMode === GameMode.Team) {
+      return this.isOnSameTeam(other) || this.isAlliedWith(other);
+    }
+
+    // In FFA mode, only existing alliances make players friendly
+    return this.isAlliedWith(other);
   }
 
   gold(): Gold {
@@ -1028,7 +1039,7 @@ export class PlayerImpl implements Player {
    * 获取有效的金币生产速率（基于国策和科技效果）
    */
   getEffectiveGoldProductionRate(): number {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     const activePolicies = new Set(
       this.policyManager.getActivePolicies().map((p) => p.id),
     );
@@ -1042,7 +1053,7 @@ export class PlayerImpl implements Player {
    * 获取有效的军队训练速率（基于国策和科技效果）
    */
   getEffectiveTroopTrainingRate(): number {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     const activePolicies = new Set(
       this.policyManager.getActivePolicies().map((p) => p.id),
     );
@@ -1056,7 +1067,7 @@ export class PlayerImpl implements Player {
    * 获取单位成本降低百分比
    */
   getUnitCostReduction(): number {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     const activePolicies = new Set(
       this.policyManager.getActivePolicies().map((p) => p.id),
     );
@@ -1070,7 +1081,7 @@ export class PlayerImpl implements Player {
    * 获取已解锁的单位列表
    */
   getUnlockedUnits(): UnitType[] {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     return PolicyTechManager.getUnlockedUnits(researchedTechs);
   }
 
@@ -1078,7 +1089,7 @@ export class PlayerImpl implements Player {
    * 获取防御加成百分比
    */
   getDefenseBonus(): number {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     const activePolicies = new Set(
       this.policyManager.getActivePolicies().map((p) => p.id),
     );
@@ -1092,7 +1103,7 @@ export class PlayerImpl implements Player {
    * 获取攻击加成百分比
    */
   getAttackBonus(): number {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     const activePolicies = new Set(
       this.policyManager.getActivePolicies().map((p) => p.id),
     );
@@ -1106,7 +1117,7 @@ export class PlayerImpl implements Player {
    * 获取外交加成百分比
    */
   getDiplomacyBonus(): number {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     const activePolicies = new Set(
       this.policyManager.getActivePolicies().map((p) => p.id),
     );
@@ -1192,7 +1203,7 @@ export class PlayerImpl implements Player {
 
   // === 科技和研究相关方法 ===
   availableTechs(): Tech[] {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     return PREDEFINED_TECHNOLOGIES.filter((tech) =>
       PolicyTechManager.canResearchTech(tech.id, researchedTechs),
     );
@@ -1202,7 +1213,7 @@ export class PlayerImpl implements Player {
     const tech = PREDEFINED_TECHNOLOGIES.find((t) => t.id === techType);
     if (!tech) return false;
 
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     if (!PolicyTechManager.canResearchTech(techType, researchedTechs)) {
       return false;
     }
@@ -1265,7 +1276,7 @@ export class PlayerImpl implements Player {
    * 获取已解锁的政策列表
    */
   getUnlockedPolicies(): PolicyType[] {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     return PolicyTechManager.getUnlockedPolicies(researchedTechs);
   }
 
@@ -1273,7 +1284,7 @@ export class PlayerImpl implements Player {
    * 获取研究速度加成
    */
   getResearchSpeedMultiplier(): number {
-    const researchedTechs = this.techTreeManager.getResearchedTechs();
+    const researchedTechs = this.techTreeManager.getResearchedTechnologies();
     const activePolicies = new Set(
       this.policyManager.getActivePolicies().map((p) => p.id),
     );
@@ -1322,13 +1333,16 @@ export class PlayerImpl implements Player {
   }
 
   addGold(toAdd: Gold, tile?: TileRef): void {
-    this._gold += toAdd;
+    // 确保转换为bigint类型
+    const goldToAdd =
+      typeof toAdd === "number" ? BigInt(Math.floor(toAdd)) : toAdd;
+    this._gold += goldToAdd;
     if (tile) {
       this.mg.addUpdate({
         type: GameUpdateType.BonusEvent,
         player: this.id(),
         tile,
-        gold: Number(toAdd),
+        gold: Number(goldToAdd),
         troops: 0,
       });
     }
@@ -1835,26 +1849,8 @@ export class PlayerImpl implements Player {
     return this.team() !== null && this.team() === other.team();
   }
 
-  isFriendly(other: Player): boolean {
-    return this.isAlliedWith(other) || this.isOnSameTeam(other);
-  }
-
   team(): Team | null {
     return this._team;
-  }
-
-  incomingAllianceRequests(): AllianceRequest[] {
-    return this.mg
-      .alliances()
-      .filter((a) => a.recipient() === this && !a.isExpired(this.mg.ticks()))
-      .map((a) => a as AllianceRequest);
-  }
-
-  outgoingAllianceRequests(): AllianceRequest[] {
-    return this.mg
-      .alliances()
-      .filter((a) => a.requester() === this && !a.isExpired(this.mg.ticks()))
-      .map((a) => a as AllianceRequest);
   }
 
   alliances(): MutableAlliance[] {
@@ -1862,9 +1858,9 @@ export class PlayerImpl implements Player {
       .alliances()
       .filter(
         (a) =>
-          (a.requester() === this || a.recipient() === this) &&
-          !a.isExpired(this.mg.ticks()),
-      ) as MutableAlliance[];
+          (a.requestor() === this || a.recipient() === this) &&
+          a.expiresAt() > this.mg.ticks(),
+      );
   }
 
   expiredAlliances(): Alliance[] {
@@ -1886,35 +1882,8 @@ export class PlayerImpl implements Player {
     return alliance ?? null;
   }
 
-  canSendAllianceRequest(other: Player): boolean {
-    // 不能和自己结盟
-    if (this === other) return false;
-
-    // 已经在联盟中
-    if (this.isAlliedWith(other)) return false;
-
-    // 已经在申请中
-    if (this.outgoingAllianceRequests().some((a) => a.recipient() === other))
-      return false;
-
-    // 敌对关系太严重
-    if (this.relation(other) < 20) return false;
-
-    return true;
-  }
-
   breakAlliance(alliance: Alliance): void {
     this.mg.expireAlliance(alliance);
-  }
-
-  createAllianceRequest(recipient: Player): AllianceRequest | null {
-    if (!this.canSendAllianceRequest(recipient)) {
-      return null;
-    }
-
-    // 这里需要实现具体的联盟请求创建逻辑
-    // 由于AllianceRequest可能需要特殊构造，这里先返回null表示需要进一步实现
-    return null;
   }
 
   // ==================== 目标相关方法 ====================

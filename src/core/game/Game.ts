@@ -509,92 +509,98 @@ export interface TerraNullius {
   smallID(): number;
 }
 
-export interface Embargo {
-  createdAt: Tick;
-  isTemporary: boolean;
-  target: Player;
+export class Embargo {
+  public readonly createdAt: Tick;
+  public readonly isTemporary: boolean;
+  public readonly target: PlayerID; // 使用 PlayerID 而不是 Player 来避免循环依赖
+
+  constructor(createdAt: Tick, isTemporary: boolean, target: PlayerID) {
+    this.createdAt = createdAt;
+    this.isTemporary = isTemporary;
+    this.target = target;
+  }
 }
 
-export interface Player {
+export abstract class Player {
   // 基础信息
-  smallID(): number;
-  info(): PlayerInfo;
-  name(): string;
-  displayName(): string;
-  clientID(): ClientID | null;
-  id(): PlayerID;
-  type(): PlayerType;
-  isPlayer(): this is Player;
-  toString(): string;
+  abstract smallID(): number;
+  abstract info(): PlayerInfo;
+  abstract name(): string;
+  abstract displayName(): string;
+  abstract clientID(): ClientID | null;
+  abstract id(): PlayerID;
+  abstract type(): PlayerType;
+  abstract isPlayer(): this is Player;
+  abstract toString(): string;
 
   // 国策系统相关方法
-  activePolicies(): Policy[];
-  availablePolicies(): Policy[];
-  enactPolicy(policyType: PolicyType): boolean;
-  cancelPolicy(policyType: PolicyType): boolean;
-  policyRemainingDuration(policyType: PolicyType): number | null;
-  updatePolicyAndTech(): void;
+  abstract activePolicies(): Policy[];
+  abstract availablePolicies(): Policy[];
+  abstract enactPolicy(policyType: PolicyType): boolean;
+  abstract cancelPolicy(policyType: PolicyType): boolean;
+  abstract policyRemainingDuration(policyType: PolicyType): number | null;
+  abstract updatePolicyAndTech(): void;
 
   // 科技树系统相关方法
-  researchedTechs(): Tech[];
-  currentResearch(): {
+  abstract researchedTechs(): Tech[];
+  abstract currentResearch(): {
     tech: Tech;
     progress: number;
     remainingTime: number;
   } | null;
-  availableTechs(): Tech[];
-  startResearch(techType: TechType): boolean;
-  cancelResearch(): boolean;
-  researchProgress(techType: TechType): number | null;
+  abstract availableTechs(): Tech[];
+  abstract startResearch(techType: TechType): boolean;
+  abstract cancelResearch(): boolean;
+  abstract researchProgress(techType: TechType): number | null;
 
   // 效果计算相关方法
-  getEffectiveGoldProductionRate(): number;
-  getEffectiveTroopTrainingRate(): number;
-  getUnitCostReduction(): number;
-  getUnlockedUnits(): UnitType[];
-  getUnlockedPolicies(): PolicyType[];
-  getResearchSpeedMultiplier(): number;
-  getDefenseBonus(): number;
-  getAttackBonus(): number;
-  getDiplomacyBonus(): number;
+  abstract getEffectiveGoldProductionRate(): number;
+  abstract getEffectiveTroopTrainingRate(): number;
+  abstract getUnitCostReduction(): number;
+  abstract getUnlockedUnits(): UnitType[];
+  abstract getUnlockedPolicies(): PolicyType[];
+  abstract getResearchSpeedMultiplier(): number;
+  abstract getDefenseBonus(): number;
+  abstract getAttackBonus(): number;
+  abstract getDiplomacyBonus(): number;
 
   // State & Properties
-  isAlive(): boolean;
-  isTraitor(): boolean;
-  markTraitor(): void;
-  largestClusterBoundingBox: { min: Cell; max: Cell } | null;
-  lastTileChange(): Tick;
+  abstract isAlive(): boolean;
+  abstract isTraitor(): boolean;
+  abstract markTraitor(): void;
+  abstract get largestClusterBoundingBox(): { min: Cell; max: Cell } | null;
+  abstract lastTileChange(): Tick;
 
-  isDisconnected(): boolean;
-  markDisconnected(isDisconnected: boolean): void;
+  abstract isDisconnected(): boolean;
+  abstract markDisconnected(isDisconnected: boolean): void;
 
-  hasSpawned(): boolean;
-  setHasSpawned(hasSpawned: boolean): void;
+  abstract hasSpawned(): boolean;
+  abstract setHasSpawned(hasSpawned: boolean): void;
 
   // Territory
-  tiles(): ReadonlySet<TileRef>;
-  borderTiles(): ReadonlySet<TileRef>;
-  numTilesOwned(): number;
-  conquer(tile: TileRef): void;
-  relinquish(tile: TileRef): void;
+  abstract tiles(): ReadonlySet<TileRef>;
+  abstract borderTiles(): ReadonlySet<TileRef>;
+  abstract numTilesOwned(): number;
+  abstract conquer(tile: TileRef): void;
+  abstract relinquish(tile: TileRef): void;
 
   // Resources & Troops
-  gold(): Gold;
-  addGold(toAdd: Gold, tile?: TileRef): void;
-  removeGold(toRemove: Gold): Gold;
-  troops(): number;
-  setTroops(troops: number): void;
-  addTroops(troops: number): void;
-  removeTroops(troops: number): number;
+  abstract gold(): Gold;
+  abstract addGold(toAdd: Gold, tile?: TileRef): void;
+  abstract removeGold(toRemove: Gold): Gold;
+  abstract troops(): number;
+  abstract setTroops(troops: number): void;
+  abstract addTroops(troops: number): void;
+  abstract removeTroops(troops: number): number;
 
   // Units
-  units(...types: UnitType[]): Unit[];
-  unitCount(type: UnitType): number;
-  unitsConstructed(type: UnitType): number;
-  unitsOwned(type: UnitType): number;
-  buildableUnits(tile: TileRef | null): BuildableUnit[];
-  canBuild(type: UnitType, targetTile: TileRef): TileRef | false;
-  buildUnit<T extends UnitType>(
+  abstract units(...types: UnitType[]): Unit[];
+  abstract unitCount(type: UnitType): number;
+  abstract unitsConstructed(type: UnitType): number;
+  abstract unitsOwned(type: UnitType): number;
+  abstract buildableUnits(tile: TileRef | null): BuildableUnit[];
+  abstract canBuild(type: UnitType, targetTile: TileRef): TileRef | false;
+  abstract buildUnit<T extends UnitType>(
     type: T,
     spawnTile: TileRef,
     params: UnitParams<T>,
@@ -604,83 +610,86 @@ export interface Player {
   // or false if it cannot be upgraded.
   // New units of the same type can upgrade existing units.
   // e.g. if a place a new city here, can it upgrade an existing city?
-  findUnitToUpgrade(type: UnitType, targetTile: TileRef): Unit | false;
-  canUpgradeUnit(unit: Unit): boolean;
-  upgradeUnit(unit: Unit): void;
-  captureUnit(unit: Unit): void;
+  abstract findUnitToUpgrade(type: UnitType, targetTile: TileRef): Unit | false;
+  abstract canUpgradeUnit(unit: Unit): boolean;
+  abstract upgradeUnit(unit: Unit): void;
+  abstract captureUnit(unit: Unit): void;
 
   // Relations & Diplomacy
-  neighbors(): (Player | TerraNullius)[];
-  sharesBorderWith(other: Player | TerraNullius): boolean;
-  relation(other: Player): Relation;
-  allRelationsSorted(): { player: Player; relation: Relation }[];
-  updateRelation(other: Player, delta: number): void;
-  decayRelations(): void;
-  isOnSameTeam(other: Player): boolean;
+  abstract neighbors(): (Player | TerraNullius)[];
+  abstract sharesBorderWith(other: Player | TerraNullius): boolean;
+  abstract relation(other: Player): Relation;
+  abstract allRelationsSorted(): { player: Player; relation: Relation }[];
+  abstract updateRelation(other: Player, delta: number): void;
+  abstract decayRelations(): void;
+  abstract isOnSameTeam(other: Player): boolean;
   // Either allied or on same team.
-  isFriendly(other: Player): boolean;
-  team(): Team | null;
-  clan(): string | null;
-  incomingAllianceRequests(): AllianceRequest[];
-  outgoingAllianceRequests(): AllianceRequest[];
-  alliances(): MutableAlliance[];
-  expiredAlliances(): Alliance[];
-  allies(): Player[];
-  isAlliedWith(other: Player): boolean;
-  allianceWith(other: Player): MutableAlliance | null;
-  canSendAllianceRequest(other: Player): boolean;
-  breakAlliance(alliance: Alliance): void;
-  createAllianceRequest(recipient: Player): AllianceRequest | null;
+  abstract isFriendly(other: Player): boolean;
+  abstract team(): Team | null;
+  abstract clan(): string | null;
+  abstract incomingAllianceRequests(): AllianceRequest[];
+  abstract outgoingAllianceRequests(): AllianceRequest[];
+  abstract alliances(): MutableAlliance[];
+  abstract expiredAlliances(): Alliance[];
+  abstract allies(): Player[];
+  abstract isAlliedWith(other: Player): boolean;
+  abstract allianceWith(other: Player): MutableAlliance | null;
+  abstract canSendAllianceRequest(other: Player): boolean;
+  abstract breakAlliance(alliance: Alliance): void;
+  abstract createAllianceRequest(recipient: Player): AllianceRequest | null;
 
   // Targeting
-  canTarget(other: Player): boolean;
-  target(other: Player): void;
-  targets(): Player[];
-  transitiveTargets(): Player[];
+  abstract canTarget(other: Player): boolean;
+  abstract target(other: Player): void;
+  abstract targets(): Player[];
+  abstract transitiveTargets(): Player[];
 
   // Communication
-  canSendEmoji(recipient: Player | typeof AllPlayers): boolean;
-  outgoingEmojis(): EmojiMessage[];
-  sendEmoji(recipient: Player | typeof AllPlayers, emoji: string): void;
+  abstract canSendEmoji(recipient: Player | typeof AllPlayers): boolean;
+  abstract outgoingEmojis(): EmojiMessage[];
+  abstract sendEmoji(
+    recipient: Player | typeof AllPlayers,
+    emoji: string,
+  ): void;
 
   // Donation
-  canDonateGold(recipient: Player): boolean;
-  canDonateTroops(recipient: Player): boolean;
-  donateTroops(recipient: Player, troops: number): boolean;
-  donateGold(recipient: Player, gold: Gold): boolean;
-  canDeleteUnit(): boolean;
-  recordDeleteUnit(): void;
-  canEmbargoAll(): boolean;
-  recordEmbargoAll(): void;
+  abstract canDonateGold(recipient: Player): boolean;
+  abstract canDonateTroops(recipient: Player): boolean;
+  abstract donateTroops(recipient: Player, troops: number): boolean;
+  abstract donateGold(recipient: Player, gold: Gold): boolean;
+  abstract canDeleteUnit(): boolean;
+  abstract recordDeleteUnit(): void;
+  abstract canEmbargoAll(): boolean;
+  abstract recordEmbargoAll(): void;
 
   // Embargo
-  hasEmbargoAgainst(other: Player): boolean;
-  tradingPartners(): Player[];
-  addEmbargo(other: Player, isTemporary: boolean): void;
-  getEmbargoes(): Embargo[];
-  stopEmbargo(other: Player): void;
-  endTemporaryEmbargo(other: Player): void;
-  canTrade(other: Player): boolean;
+  abstract hasEmbargoAgainst(other: Player): boolean;
+  abstract tradingPartners(): Player[];
+  abstract addEmbargo(other: Player, isTemporary: boolean): void;
+  abstract getEmbargoes(): Embargo[];
+  abstract stopEmbargo(other: Player): void;
+  abstract endTemporaryEmbargo(other: Player): void;
+  abstract canTrade(other: Player): boolean;
 
   // Attacking.
-  canAttack(tile: TileRef): boolean;
+  abstract canAttack(tile: TileRef): boolean;
 
-  createAttack(
+  abstract createAttack(
     target: Player | TerraNullius,
     troops: number,
     sourceTile: TileRef | null,
     border: Set<number>,
   ): Attack;
-  outgoingAttacks(): Attack[];
-  incomingAttacks(): Attack[];
-  orderRetreat(attackID: string): void;
-  executeRetreat(attackID: string): void;
+  abstract outgoingAttacks(): Attack[];
+  abstract incomingAttacks(): Attack[];
+  abstract orderRetreat(attackID: string): void;
+  abstract executeRetreat(attackID: string): void;
 
   // Misc
-  toUpdate(): PlayerUpdate;
-  playerProfile(): PlayerProfile;
+  abstract toUpdate(): PlayerUpdate;
+  abstract playerProfile(): PlayerProfile;
   // WARNING: this operation is expensive.
-  bestTransportShipSpawn(tile: TileRef): TileRef | false;
+  abstract bestTransportShipSpawn(tile: TileRef): TileRef | false;
 }
 
 export interface Game extends GameMap {

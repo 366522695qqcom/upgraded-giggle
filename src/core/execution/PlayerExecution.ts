@@ -79,7 +79,7 @@ export class PlayerExecution implements Execution {
     this.player.addGold(effectiveGoldRate);
 
     // Record stats
-    this.mg.stats().goldWork(this.player, goldFromWorkers);
+    this.mg.stats().goldWork(this.player, effectiveGoldRate);
 
     const alliances = Array.from(this.player.alliances());
     for (const alliance of alliances) {
