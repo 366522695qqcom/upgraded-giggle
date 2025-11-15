@@ -73,14 +73,49 @@ export async function startMaster() {
   log.info(`Primary ${process.pid} is running`);
   log.info(`Setting up ${config.numWorkers()} workers...`);
 
-  // Fork workers
-  for (let i = 0; i < config.numWorkers(); i++) {
-    const worker = cluster.fork({
-      WORKER_ID: i,
-    });
 
+
+  // Keep track of worker IDs
+  const workerIds = new Map<string, number>();
+  
+  // Fork workers and track their IDs
+  const numWorkers = config.numWorkers();
+  for (let i = 0; i < numWorkers; i++) {
+    const worker = cluster.fork({
+      WORKER_ID: i.toString(),
+      GAME_ENV: process.env.GAME_ENV || "dev",
+    });
+    workerIds.set(worker.id.toString(), i);
     log.info(`Started worker ${i} (PID: ${worker.process.pid})`);
   }
+
+  // Handle signals gracefully
+  let shuttingDown = false;
+  
+  process.on("SIGTERM", () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    log.info("Received SIGTERM, shutting down gracefully...");
+    
+    // Stop accepting new connections and let workers finish
+    for (const worker of cluster.workers.values()) {
+      worker.kill("SIGTERM");
+    }
+    
+    setTimeout(() => process.exit(0), 5000);
+  });
+
+  process.on("SIGINT", () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    log.info("Received SIGINT, shutting down gracefully...");
+    
+    for (const worker of cluster.workers.values()) {
+      worker.kill("SIGTERM");
+    }
+    
+    setTimeout(() => process.exit(0), 5000);
+  });
 
   cluster.on("message", (worker, message) => {
     if (message.type === "WORKER_READY") {
@@ -114,9 +149,15 @@ export async function startMaster() {
 
   // Handle worker crashes
   cluster.on("exit", (worker, code, signal) => {
-    const workerId = (worker as any).process?.env?.WORKER_ID;
-    if (!workerId) {
-      log.error(`worker crashed could not find id`);
+    // If we're shutting down, don't restart workers
+    if (shuttingDown) {
+      log.info(`Worker ${worker.id} (PID: ${worker.process.pid}) exited with code: ${code} and signal: ${signal} during shutdown`);
+      return;
+    }
+
+    const workerId = workerIds.get(worker.id.toString());
+    if (workerId === undefined) {
+      log.error(`worker crashed could not find id for worker ${worker.id}`);
       return;
     }
 
@@ -127,8 +168,12 @@ export async function startMaster() {
 
     // Restart the worker with the same ID
     const newWorker = cluster.fork({
-      WORKER_ID: workerId,
+      WORKER_ID: workerId.toString(),
+      GAME_ENV: process.env.GAME_ENV || "dev",
     });
+    
+    // Update our tracking
+    workerIds.set(newWorker.id.toString(), workerId);
 
     log.info(
       `Restarted worker ${workerId} (New PID: ${newWorker.process.pid})`,
