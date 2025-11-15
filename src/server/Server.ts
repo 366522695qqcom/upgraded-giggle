@@ -33,9 +33,20 @@ main().catch((error) => {
 });
 
 async function setupTunnels() {
+  // Check if tunnel creation should be skipped
+  const cfAccountId = config.cloudflareAccountId();
+  const cfApiToken = config.cloudflareApiToken();
+
+  // Skip tunnel creation if either value is "skip-tunnel"
+  if (cfAccountId === "skip-tunnel" || cfApiToken === "skip-tunnel") {
+    console.log("Skipping Cloudflare tunnel creation as requested");
+    console.log("Server will be available without Cloudflare tunnel");
+    return;
+  }
+
   const cloudflare = new Cloudflare(
-    config.cloudflareAccountId(),
-    config.cloudflareApiToken(),
+    cfAccountId,
+    cfApiToken,
     config.cloudflareConfigPath(),
     config.cloudflareCredsPath(),
   );
