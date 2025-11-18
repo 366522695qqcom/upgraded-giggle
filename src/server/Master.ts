@@ -73,17 +73,15 @@ export async function startMaster() {
   log.info(`Primary ${process.pid} is running`);
   log.info(`Setting up ${config.numWorkers()} workers...`);
 
-
-
   // Keep track of worker IDs
   const workerIds = new Map<string, number>();
-  
+
   // Fork workers and track their IDs
   const numWorkers = config.numWorkers();
   for (let i = 0; i < numWorkers; i++) {
     const worker = cluster.fork({
       WORKER_ID: i.toString(),
-      GAME_ENV: process.env.GAME_ENV || "dev",
+      GAME_ENV: process.env.GAME_ENV ?? "dev",
     });
     workerIds.set(worker.id.toString(), i);
     log.info(`Started worker ${i} (PID: ${worker.process.pid})`);
@@ -91,17 +89,17 @@ export async function startMaster() {
 
   // Handle signals gracefully
   let shuttingDown = false;
-  
+
   process.on("SIGTERM", () => {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info("Received SIGTERM, shutting down gracefully...");
-    
+
     // Stop accepting new connections and let workers finish
     for (const worker of cluster.workers.values()) {
       worker.kill("SIGTERM");
     }
-    
+
     setTimeout(() => process.exit(0), 5000);
   });
 
@@ -109,11 +107,11 @@ export async function startMaster() {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info("Received SIGINT, shutting down gracefully...");
-    
+
     for (const worker of cluster.workers.values()) {
       worker.kill("SIGTERM");
     }
-    
+
     setTimeout(() => process.exit(0), 5000);
   });
 
@@ -151,7 +149,9 @@ export async function startMaster() {
   cluster.on("exit", (worker, code, signal) => {
     // If we're shutting down, don't restart workers
     if (shuttingDown) {
-      log.info(`Worker ${worker.id} (PID: ${worker.process.pid}) exited with code: ${code} and signal: ${signal} during shutdown`);
+      log.info(
+        `Worker ${worker.id} (PID: ${worker.process.pid}) exited with code: ${code} and signal: ${signal} during shutdown`,
+      );
       return;
     }
 
@@ -169,9 +169,9 @@ export async function startMaster() {
     // Restart the worker with the same ID
     const newWorker = cluster.fork({
       WORKER_ID: workerId.toString(),
-      GAME_ENV: process.env.GAME_ENV || "dev",
+      GAME_ENV: process.env.GAME_ENV ?? "dev",
     });
-    
+
     // Update our tracking
     workerIds.set(newWorker.id.toString(), workerId);
 
@@ -340,6 +340,68 @@ async function schedulePublicGame(playlist: MapPlaylist) {
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+// Worker routing middleware - must be before SPA fallback
+app.use(async (req, res, next) => {
+  const originalPath = req.url;
+  const match = originalPath.match(/^\/w(\d+)(.*)$/);
+
+  if (match) {
+    const workerId = parseInt(match[1]);
+    const actualPath = match[2] || "/";
+
+    // Security check: only allow workers 0 and 1 (max 2 workers)
+    if (workerId >= config.numWorkers()) {
+      return res.status(403).json({
+        error: "Worker not available",
+        message: `Worker ${workerId} is not available. Only workers 0-${config.numWorkers() - 1} are allowed.`,
+      });
+    }
+
+    // For authorized workers, redirect to appropriate worker port
+    const workerPort = 3000 + workerId + 1;
+    const targetUrl = `http://localhost:${workerPort}${actualPath}`;
+
+    try {
+      const { default: http } = await import("http");
+      const { URL } = await import("url");
+
+      const parsedUrl = new URL(targetUrl);
+      const options = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: req.method,
+        headers: req.headers,
+      };
+
+      const proxyReq = http.request(options, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.pipe(res);
+      });
+
+      proxyReq.on("error", (err) => {
+        console.error("Proxy error:", err);
+        res.status(502).json({
+          error: "Bad Gateway",
+          message: "Worker server is not responding",
+        });
+      });
+
+      req.pipe(proxyReq);
+    } catch (err) {
+      console.error("Failed to proxy request:", err);
+      res.status(500).json({
+        error: "Internal Server Error",
+        message: "Failed to proxy request",
+      });
+    }
+
+    return;
+  }
+
+  next();
+});
 
 // SPA fallback route
 app.get("*", function (req, res) {
