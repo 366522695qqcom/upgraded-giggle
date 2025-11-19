@@ -98,7 +98,9 @@ export async function startMaster() {
     // Stop accepting new connections and let workers finish
     if (cluster.workers && Object.keys(cluster.workers).length > 0) {
       for (const worker of Object.values(cluster.workers)) {
-        worker.kill();
+        if (worker) {
+          worker.kill();
+        }
       }
     }
 
@@ -112,7 +114,9 @@ export async function startMaster() {
 
     if (cluster.workers && Object.keys(cluster.workers).length > 0) {
       for (const worker of Object.values(cluster.workers)) {
-        worker.kill();
+        if (worker) {
+          worker.kill();
+        }
       }
     }
 
