@@ -96,8 +96,10 @@ export async function startMaster() {
     log.info("Received SIGTERM, shutting down gracefully...");
 
     // Stop accepting new connections and let workers finish
-    for (const worker of cluster.workers.values()) {
-      worker.kill("SIGTERM");
+    if (cluster.workers) {
+      for (const worker of cluster.workers.values()) {
+        worker.kill("SIGTERM");
+      }
     }
 
     setTimeout(() => process.exit(0), 5000);
@@ -108,8 +110,10 @@ export async function startMaster() {
     shuttingDown = true;
     log.info("Received SIGINT, shutting down gracefully...");
 
-    for (const worker of cluster.workers.values()) {
-      worker.kill("SIGTERM");
+    if (cluster.workers) {
+      for (const worker of cluster.workers.values()) {
+        worker.kill("SIGTERM");
+      }
     }
 
     setTimeout(() => process.exit(0), 5000);
@@ -190,7 +194,7 @@ app.get("/api/env", async (req, res) => {
   const envConfig = {
     game_env: process.env.GAME_ENV,
   };
-  if (!envConfig.game_env) return res.sendStatus(500);
+  if (!envConfig.game_env) return res.status(500).send("Internal Server Error");
   res.json(envConfig);
 });
 
@@ -208,7 +212,7 @@ app.post("/api/kick_player/:gameID/:clientID", async (req, res) => {
   const { gameID, clientID } = req.params;
 
   if (!ID.safeParse(gameID).success || !ID.safeParse(clientID).success) {
-    res.sendStatus(400);
+    res.status(400).send("Bad Request");
     return;
   }
 
