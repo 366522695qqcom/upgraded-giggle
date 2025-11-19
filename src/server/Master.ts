@@ -98,7 +98,7 @@ export async function startMaster() {
     // Stop accepting new connections and let workers finish
     if (cluster.workers) {
       for (const worker of cluster.workers.values()) {
-        worker.kill("SIGTERM");
+        worker.kill();
       }
     }
 
@@ -112,7 +112,7 @@ export async function startMaster() {
 
     if (cluster.workers) {
       for (const worker of cluster.workers.values()) {
-        worker.kill("SIGTERM");
+        worker.kill();
       }
     }
 
