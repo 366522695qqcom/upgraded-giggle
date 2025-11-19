@@ -96,8 +96,8 @@ export async function startMaster() {
     log.info("Received SIGTERM, shutting down gracefully...");
 
     // Stop accepting new connections and let workers finish
-    if (cluster.workers) {
-      for (const worker of cluster.workers.values()) {
+    if (cluster.workers && Object.keys(cluster.workers).length > 0) {
+      for (const worker of Object.values(cluster.workers)) {
         worker.kill();
       }
     }
@@ -110,8 +110,8 @@ export async function startMaster() {
     shuttingDown = true;
     log.info("Received SIGINT, shutting down gracefully...");
 
-    if (cluster.workers) {
-      for (const worker of cluster.workers.values()) {
+    if (cluster.workers && Object.keys(cluster.workers).length > 0) {
+      for (const worker of Object.values(cluster.workers)) {
         worker.kill();
       }
     }
@@ -367,7 +367,7 @@ app.use(async (req, res, next) => {
     const targetUrl = `http://localhost:${workerPort}${actualPath}`;
 
     try {
-      const { default: http } = await import("http");
+      const http = await import("http");
       const { URL } = await import("url");
 
       const parsedUrl = new URL(targetUrl);
@@ -380,7 +380,15 @@ app.use(async (req, res, next) => {
       };
 
       const proxyReq = http.request(options, (proxyRes) => {
-        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        if (proxyRes.statusCode !== undefined) {
+          res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        } else {
+          res.status(502).json({
+            error: "Bad Gateway",
+            message: "Worker server responded without status code",
+          });
+          return;
+        }
         proxyRes.pipe(res);
       });
 
