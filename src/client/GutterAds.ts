@@ -13,6 +13,9 @@ export class GutterAds extends LitElement {
   @state()
   private isVisible: boolean = false;
 
+  // Disable ads in offline mode
+  private readonly isOfflineMode: boolean = true;
+
   // Override createRenderRoot to disable shadow DOM
   createRenderRoot() {
     return this;
@@ -30,6 +33,14 @@ export class GutterAds extends LitElement {
   }
 
   private onUserMe(userMeResponse: UserMeResponse | false): void {
+    // In offline mode, never show ads
+    if (this.isOfflineMode) {
+      console.log("Offline mode: Ads disabled");
+      window.enableAds = false;
+      return;
+    }
+
+    // Original logic preserved but not used in offline mode
     const flares =
       userMeResponse === false ? [] : (userMeResponse.player.flares ?? []);
     const hasFlare = flares.some((flare) => flare.startsWith("pattern:"));
@@ -54,6 +65,12 @@ export class GutterAds extends LitElement {
   }
 
   public show(): void {
+    // In offline mode, never show ads
+    if (this.isOfflineMode) {
+      console.log("Offline mode: Ads display blocked");
+      return;
+    }
+
     if (!this.isScreenLargeEnough()) {
       console.log("Screen too small for gutter ads, skipping");
       return;
@@ -86,6 +103,13 @@ export class GutterAds extends LitElement {
   }
 
   private loadAds(): void {
+    // In offline mode, never load ads
+    if (this.isOfflineMode) {
+      console.log("Offline mode: Ads loading blocked");
+      return;
+    }
+
+    // Original logic preserved but not used in offline mode
     // Ensure the container elements exist before loading ads
     const leftContainer = this.querySelector(`#${LEFT_FUSE}`);
     const rightContainer = this.querySelector(`#${RIGHT_FUSE}`);

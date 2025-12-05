@@ -417,10 +417,10 @@ class Client {
           // in case it is unset during reload.
           this.userSettings.setSelectedPatternName(patternName);
         });
-        this.tokenLoginModal.open(token);
+        this.tokenLoginModal?.open(token);
       } else {
         alertAndStrip(`purchase succeeded: ${patternName}`);
-        this.patternsModal.refresh();
+        this.patternsModal?.refresh();
       }
       return;
     }
@@ -436,13 +436,13 @@ class Client {
       }
 
       strip();
-      this.tokenLoginModal.open(token);
+      this.tokenLoginModal?.open(token);
       return;
     }
 
     if (decodedHash.startsWith("#join=")) {
       const lobbyId = decodedHash.substring(6); // Remove "#join="
-      if (lobbyId && ID.safeParse(lobbyId).success) {
+      if (lobbyId && ID.safeParse(lobbyId).success && this.joinModal) {
         this.joinModal.open(lobbyId);
         console.log(`joining lobby ${lobbyId}`);
       }
@@ -450,7 +450,7 @@ class Client {
     if (decodedHash.startsWith("#affiliate=")) {
       const affiliateCode = decodedHash.replace("#affiliate=", "");
       strip();
-      if (affiliateCode) {
+      if (affiliateCode && this.patternsModal) {
         this.patternsModal.open(affiliateCode);
       }
     }
@@ -517,10 +517,12 @@ class Client {
             close?: () => void;
             isModalOpen?: boolean;
           };
-          if (modal?.close) {
-            modal.close();
-          } else if ("isModalOpen" in modal) {
-            modal.isModalOpen = false;
+          if (modal) {
+            if (modal.close) {
+              modal.close();
+            } else if ("isModalOpen" in modal) {
+              modal.isModalOpen = false;
+            }
           }
         });
         this.publicLobby.stop();
@@ -538,7 +540,9 @@ class Client {
         this.gutterAds.hide();
       },
       () => {
-        this.joinModal.close();
+        if (this.joinModal) {
+          this.joinModal.close();
+        }
         this.publicLobby.stop();
         incrementGamesPlayed();
 

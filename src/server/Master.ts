@@ -22,6 +22,7 @@ const log = logger.child({ comp: "m" });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.json());
+// 提供静态文件，包括地图文件
 app.use(
   express.static(path.join(__dirname, "../../static"), {
     maxAge: "1y", // Set max-age to 1 year for all static assets
@@ -48,13 +49,16 @@ app.use(
     },
   }),
 );
+// 直接提供resources目录中的地图文件
+app.use("/maps", express.static(path.join(__dirname, "../../resources/maps")));
 app.use(express.json());
 
 app.set("trust proxy", 3);
+// 增加速率限制以避免429错误
 app.use(
   rateLimit({
     windowMs: 1000, // 1 second
-    max: 20, // 20 requests per IP per second
+    max: 50, // 增加到50个请求每秒
   }),
 );
 
@@ -200,6 +204,15 @@ app.get("/api/env", async (req, res) => {
   };
   if (!envConfig.game_env) return res.status(500).send("Internal Server Error");
   res.json(envConfig);
+});
+
+// Add config endpoint for client configuration
+app.get("/api/config", async (_, res) => {
+  res.json({
+    env: config.env(),
+    jwtAudience: config.jwtAudience(),
+    numWorkers: config.numWorkers(),
+  });
 });
 
 // Add lobbies endpoint to list public games for this worker

@@ -1,10 +1,5 @@
 import { UserMeResponse } from "../core/ApiSchemas";
-import {
-  ColorPalette,
-  Cosmetics,
-  CosmeticsSchema,
-  Pattern,
-} from "../core/CosmeticSchemas";
+import { ColorPalette, Cosmetics, Pattern } from "../core/CosmeticSchemas";
 import { getApiBase, getAuthHeader } from "./jwt";
 import { getPersistentID } from "./Main";
 
@@ -53,22 +48,28 @@ export async function handlePurchase(
 }
 
 export async function fetchCosmetics(): Promise<Cosmetics | null> {
-  try {
-    const response = await fetch(`${getApiBase()}/cosmetics.json`);
-    if (!response.ok) {
-      console.error(`HTTP error! status: ${response.status}`);
-      return null;
-    }
-    const result = CosmeticsSchema.safeParse(await response.json());
-    if (!result.success) {
-      console.error(`Invalid cosmetics: ${result.error.message}`);
-      return null;
-    }
-    return result.data;
-  } catch (error) {
-    console.error("Error getting cosmetics:", error);
-    return null;
-  }
+  // Offline mode: return local default cosmetics instead of fetching from API
+  console.log("Using offline default cosmetics");
+  return {
+    patterns: [
+      {
+        name: "default",
+        title: "Default",
+        product: null,
+        preview:
+          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23808080'/%3E%3C/svg%3E",
+        colorizedPreview: {},
+      },
+    ],
+    colorPalettes: [
+      {
+        name: "default",
+        title: "Default",
+        colors: ["#FFFFFF", "#000000"],
+      },
+    ],
+    affiliateCodes: [],
+  };
 }
 
 export function patternRelationship(

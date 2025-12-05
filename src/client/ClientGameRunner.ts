@@ -73,6 +73,16 @@ export function joinLobby(
     `joining lobby: gameID: ${lobbyConfig.gameID}, clientID: ${lobbyConfig.clientID}`,
   );
 
+  // 添加null检查，确保回调函数存在
+  if (!onPrestart) {
+    console.error("onPrestart callback is null or undefined");
+    onPrestart = () => console.warn("onPrestart was null");
+  }
+  if (!onJoin) {
+    console.error("onJoin callback is null or undefined");
+    onJoin = () => console.warn("onJoin was null");
+  }
+
   const userSettings: UserSettings = new UserSettings();
   startGame(lobbyConfig.gameID, lobbyConfig.gameStartInfo?.config ?? {});
 
@@ -80,56 +90,112 @@ export function joinLobby(
 
   const onconnect = () => {
     console.log(`Joined game lobby ${lobbyConfig.gameID}`);
-    transport.joinGame(0);
+    try {
+      transport.joinGame(0);
+    } catch (error) {
+      console.error("Error in joinGame call:", error);
+    }
   };
   let terrainLoad: Promise<TerrainMapData> | null = null;
 
   const onmessage = (message: ServerMessage) => {
-    if (message.type === "prestart") {
-      console.log(
-        `lobby: game prestarting: ${JSON.stringify(message, replacer)}`,
-      );
-      terrainLoad = loadTerrainMap(
-        message.gameMap,
-        message.gameMapSize,
-        terrainMapFileLoader,
-      );
-      onPrestart();
-    }
-    if (message.type === "start") {
-      // Trigger prestart for singleplayer games
-      onPrestart();
-      console.log(
-        `lobby: game started: ${JSON.stringify(message, replacer, 2)}`,
-      );
-      onJoin();
-      // For multiplayer games, GameStartInfo is not known until game starts.
-      lobbyConfig.gameStartInfo = message.gameStartInfo;
-      createClientGame(
-        lobbyConfig,
-        eventBus,
-        transport,
-        userSettings,
-        terrainLoad,
-        terrainMapFileLoader,
-      ).then((r) => r.start());
-    }
-    if (message.type === "error") {
-      showErrorModal(
-        message.error,
-        message.message,
-        lobbyConfig.gameID,
-        lobbyConfig.clientID,
-        true,
-        false,
-        "error_modal.connection_error",
-      );
+    try {
+      if (message.type === "prestart") {
+        console.log(
+          `lobby: game prestarting: ${JSON.stringify(message, replacer)}`,
+        );
+        try {
+          terrainLoad = loadTerrainMap(
+            message.gameMap,
+            message.gameMapSize,
+            terrainMapFileLoader,
+          );
+        } catch (error) {
+          console.error("Error loading terrain map:", error);
+        }
+        try {
+          onPrestart();
+        } catch (error) {
+          console.error("Error in onPrestart callback:", error);
+        }
+      }
+      if (message.type === "start") {
+        // Trigger prestart for singleplayer games
+        try {
+          onPrestart();
+        } catch (error) {
+          console.error("Error in onPrestart callback during start:", error);
+        }
+        console.log(
+          `lobby: game started: ${JSON.stringify(message, replacer, 2)}`,
+        );
+        try {
+          onJoin();
+        } catch (error) {
+          console.error("Error in onJoin callback:", error);
+        }
+        // For multiplayer games, GameStartInfo is not known until game starts.
+        lobbyConfig.gameStartInfo = message.gameStartInfo;
+        try {
+          createClientGame(
+            lobbyConfig,
+            eventBus,
+            transport,
+            userSettings,
+            terrainLoad,
+            terrainMapFileLoader,
+          )
+            .then((r) => {
+              if (r) {
+                try {
+                  r.start();
+                } catch (error) {
+                  console.error("Error in ClientGameRunner.start():", error);
+                }
+              } else {
+                console.error("createClientGame returned null or undefined");
+              }
+            })
+            .catch((error) => {
+              console.error("Error in createClientGame promise:", error);
+            });
+        } catch (error) {
+          console.error("Error in createClientGame call:", error);
+        }
+      }
+      if (message.type === "error") {
+        try {
+          showErrorModal(
+            message.error,
+            message.message,
+            lobbyConfig.gameID,
+            lobbyConfig.clientID,
+            true,
+            false,
+            "error_modal.connection_error",
+          );
+        } catch (error) {
+          console.error("Error showing error modal:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Unhandled error in onmessage callback:", error);
     }
   };
-  transport.connect(onconnect, onmessage);
+
+  try {
+    transport.connect(onconnect, onmessage);
+  } catch (error) {
+    console.error("Error in transport.connect call:", error);
+  }
+
   return () => {
     console.log("leaving game");
-    transport.leaveGame();
+    try {
+      transport.leaveGame();
+    } catch (error) {
+      console.error("Error in leaveGame call:", error);
+    }
   };
 }
 

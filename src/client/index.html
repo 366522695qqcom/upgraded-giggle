@@ -91,48 +91,19 @@
       document.documentElement.className = "preload";
     </script>
 
-    <!-- Publift/Fuse ads -->
-    <script
-      async
-      src="https://cdn.fuseplatform.net/publift/tags/2/4121/fuse.js"
-    ></script>
+    <!-- 离线模式：已移除 Prebid.js 脚本 -->
 
+    <!-- Google AdSense - Disabled -->
+    <!--
     <script>
       window.googletag = window.googletag || { cmd: [] };
       googletag.cmd.push(function () {
         googletag.pubads().set("page_url", "http://openfront.io ");
       });
     </script>
+    -->
 
-    <!-- Analytics -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=AW-16702609763"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-
-      gtag("js", new Date());
-      gtag("config", "AW-16702609763");
-    </script>
-    <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-WQGQQ8RDN4"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag("js", new Date());
-
-      gtag("config", "G-WQGQQ8RDN4");
-    </script>
+    <!-- 离线模式：已移除 Google Analytics 脚本 -->
   </head>
 
   <body
@@ -210,6 +181,7 @@
       <div class="container pt-12">
         <token-login class="w-[20%] md:w-[15%]"></token-login>
 
+        <!-- Offline mode: Only show single player option -->
         <div class="container__row">
           <flag-input class="w-[20%] md:w-[20%]"></flag-input>
           <territory-patterns-modal class="w-[20%] md:w-[15%]">
@@ -220,11 +192,9 @@
             ></button>
           </territory-patterns-modal>
           <username-input class="relative w-full"></username-input>
-          <news-button
-            class="w-[20%] md:w-[15%] component-hideable"
-          ></news-button>
         </div>
         <div></div>
+        <!-- Multiplayer lobby -->
         <div>
           <public-lobby class="block"></public-lobby>
         </div>
@@ -243,12 +213,6 @@
             block
             secondary
           ></o-button>
-          <!-- <o-button
-            id="chat-button"
-            title="Chat Test"
-            block
-            secondary
-          ></o-button> -->
         </div>
 
         <o-button
@@ -308,8 +272,9 @@
         class="w-full md:w-2/3 md:fixed sm:right-0 md:bottom-0 md:flex flex-col items-end"
         style="pointer-events: none"
       >
-        <chat-display></chat-display>
-        <events-display></events-display>
+        <!-- Chat and events removed in offline mode -->
+        <!-- <chat-display></chat-display>
+        <events-display></events-display> -->
       </div>
       <div style="pointer-events: auto">
         <control-panel></control-panel>
@@ -336,13 +301,7 @@
           >
             Wiki
           </a>
-          <a
-            target="_blank"
-            href="https://discord.gg/jRpxXvG42t"
-            class="t-link"
-          >
-            <span data-i18n="main.join_discord"> Join the Discord! </span>
-          </a>
+          <!-- Discord link removed in offline mode -->
         </div>
         <div class="l-footer__col t-text-white">
           <a
@@ -378,11 +337,13 @@
         </div>
       </div>
     </footer>
-    <account-button></account-button>
+    <!-- Account button removed in offline mode -->
+    <!-- <account-button></account-button> -->
     <!-- Game modals and overlays -->
     <single-player-modal></single-player-modal>
-    <host-lobby-modal></host-lobby-modal>
-    <join-private-lobby-modal></join-private-lobby-modal>
+    <!-- Multiplayer modals removed in offline mode -->
+    <!-- <host-lobby-modal></host-lobby-modal>
+    <join-private-lobby-modal></join-private-lobby-modal> -->
     <emoji-table></emoji-table>
     <build-menu></build-menu>
     <win-modal></win-modal>
@@ -394,15 +355,18 @@
       <game-right-sidebar></game-right-sidebar>
     </div>
     <settings-modal></settings-modal>
-    <player-panel></player-panel>
+    <!-- Player panel removed in offline mode -->
+    <!-- <player-panel></player-panel> -->
     <spawn-timer></spawn-timer>
     <help-modal></help-modal>
     <dark-mode-button></dark-mode-button>
     <alert-frame></alert-frame>
-    <chat-modal></chat-modal>
+    <!-- Chat modal removed in offline mode -->
+    <!-- <chat-modal></chat-modal> -->
     <user-setting></user-setting>
     <multi-tab-modal></multi-tab-modal>
-    <news-modal></news-modal>
+    <!-- News modal removed in offline mode -->
+    <!-- <news-modal></news-modal> -->
     <game-left-sidebar></game-left-sidebar>
     <flag-input-modal></flag-input-modal>
     <performance-overlay></performance-overlay>
@@ -434,11 +398,6 @@
       });
     </script>
 
-    <!-- Analytics -->
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "03d93e6fefb349c28ee69b408fa25a13"}'
-    ></script>
+    <!-- 离线模式：已移除 Cloudflare Web Analytics -->
   </body>
 </html>

@@ -93,7 +93,7 @@ export class MapPlaylist {
       disableNPCs: mode === GameMode.Team,
       gameMode: mode,
       playerTeams,
-      bots: 400,
+      bots: 100,
       disabledUnits: [],
     } satisfies GameConfig;
   }

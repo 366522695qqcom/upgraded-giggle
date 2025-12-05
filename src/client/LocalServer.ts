@@ -48,7 +48,17 @@ export class LocalServer {
     private clientMessage: (message: ServerMessage) => void,
     private isReplay: boolean,
     private eventBus: EventBus,
-  ) {}
+  ) {
+    // 添加null检查，确保回调函数存在
+    if (!clientMessage) {
+      console.error("clientMessage callback is null or undefined");
+      this.clientMessage = () => console.warn("clientMessage was null");
+    }
+    if (!clientConnect) {
+      console.error("clientConnect callback is null or undefined");
+      this.clientConnect = () => console.warn("clientConnect was null");
+    }
+  }
 
   start() {
     this.turnCheckInterval = setInterval(() => {
@@ -71,7 +81,10 @@ export class LocalServer {
     });
 
     this.startedAt = Date.now();
-    this.clientConnect();
+    // 添加null检查，确保安全调用回调
+    if (this.clientConnect) {
+      this.clientConnect();
+    }
     if (this.lobbyConfig.gameRecord) {
       this.replayTurns = decompressGameRecord(
         this.lobbyConfig.gameRecord,
@@ -80,11 +93,18 @@ export class LocalServer {
     if (this.lobbyConfig.gameStartInfo === undefined) {
       throw new Error("missing gameStartInfo");
     }
-    this.clientMessage({
-      type: "start",
-      gameStartInfo: this.lobbyConfig.gameStartInfo,
-      turns: [],
-    } satisfies ServerStartGameMessage);
+    // 添加null检查，确保安全调用回调
+    if (this.clientMessage) {
+      try {
+        this.clientMessage({
+          type: "start",
+          gameStartInfo: this.lobbyConfig.gameStartInfo,
+          turns: [],
+        } satisfies ServerStartGameMessage);
+      } catch (error) {
+        console.error("Error in clientMessage callback during start:", error);
+      }
+    }
   }
 
   pause() {
@@ -211,58 +231,30 @@ export class LocalServer {
       console.error("Error parsing game record", error);
       return;
     }
-    const workerPath = this.lobbyConfig.serverConfig.workerPath(
-      this.lobbyConfig.gameStartInfo.gameID,
-    );
-
     const jsonString = JSON.stringify(result.data, replacer);
 
-    compress(jsonString)
-      .then((compressedData) => {
-        return fetch(`/${workerPath}/api/archive_singleplayer_game`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Content-Encoding": "gzip",
-          },
-          body: compressedData,
-          keepalive: true, // Ensures request completes even if page unloads
-        });
+    // 不使用gzip压缩直接发送JSON数据
+    return fetch(`/api/archive_singleplayer_game`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: jsonString,
+      keepalive: true, // Ensures request completes even if page unloads
+    })
+      .then((response) => {
+        if (!response.ok) {
+          console.error(
+            `Failed to archive singleplayer game: HTTP ${response.status}`,
+          );
+          return response.text().then((text) => {
+            console.error(`Response body: ${text}`);
+          });
+        }
+        console.log("Successfully archived singleplayer game");
       })
       .catch((error) => {
         console.error("Failed to archive singleplayer game:", error);
       });
   }
-}
-
-async function compress(data: string): Promise<Uint8Array> {
-  const stream = new CompressionStream("gzip");
-  const writer = stream.writable.getWriter();
-  const reader = stream.readable.getReader();
-
-  // Write the data to the compression stream
-  writer.write(new TextEncoder().encode(data));
-  writer.close();
-
-  // Read the compressed data
-  const chunks: Uint8Array[] = [];
-  let done = false;
-  while (!done) {
-    const { value, done: readerDone } = await reader.read();
-    done = readerDone;
-    if (value) {
-      chunks.push(value);
-    }
-  }
-
-  // Combine all chunks into a single Uint8Array
-  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-  const compressedData = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    compressedData.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  return compressedData;
 }

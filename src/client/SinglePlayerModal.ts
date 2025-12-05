@@ -36,7 +36,7 @@ export class SinglePlayerModal extends LitElement {
   @state() private selectedMap: GameMapType = GameMapType.World;
   @state() private selectedDifficulty: Difficulty = Difficulty.Medium;
   @state() private disableNPCs: boolean = false;
-  @state() private bots: number = 400;
+  @state() private bots: number = 100;
   @state() private infiniteGold: boolean = false;
   @state() private infiniteTroops: boolean = false;
   @state() private compactMap: boolean = false;

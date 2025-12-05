@@ -53,180 +53,206 @@ export function createRenderer(
   const startingModal = document.querySelector(
     "game-starting-modal",
   ) as GameStartingModal;
-  startingModal.hide();
+  if (startingModal && startingModal instanceof GameStartingModal) {
+    startingModal.hide();
+  } else {
+    console.error("GameStartingModal element not found in the DOM");
+  }
 
   // TODO maybe append this to document instead of querying for them?
   const emojiTable = document.querySelector("emoji-table") as EmojiTable;
-  if (!emojiTable || !(emojiTable instanceof EmojiTable)) {
+  if (emojiTable && emojiTable instanceof EmojiTable) {
+    emojiTable.transformHandler = transformHandler;
+    emojiTable.game = game;
+    emojiTable.initEventBus(eventBus);
+  } else {
     console.error("EmojiTable element not found in the DOM");
   }
-  emojiTable.transformHandler = transformHandler;
-  emojiTable.game = game;
-  emojiTable.initEventBus(eventBus);
 
   const buildMenu = document.querySelector("build-menu") as BuildMenu;
-  if (!buildMenu || !(buildMenu instanceof BuildMenu)) {
+  if (buildMenu && buildMenu instanceof BuildMenu) {
+    buildMenu.game = game;
+    buildMenu.eventBus = eventBus;
+    buildMenu.transformHandler = transformHandler;
+  } else {
     console.error("BuildMenu element not found in the DOM");
   }
-  buildMenu.game = game;
-  buildMenu.eventBus = eventBus;
-  buildMenu.transformHandler = transformHandler;
 
   const leaderboard = document.querySelector("leader-board") as Leaderboard;
-  if (!leaderboard || !(leaderboard instanceof Leaderboard)) {
+  if (leaderboard && leaderboard instanceof Leaderboard) {
+    leaderboard.eventBus = eventBus;
+    leaderboard.game = game;
+  } else {
     console.error("LeaderBoard element not found in the DOM");
   }
-  leaderboard.eventBus = eventBus;
-  leaderboard.game = game;
 
   const gameLeftSidebar = document.querySelector(
     "game-left-sidebar",
   ) as GameLeftSidebar;
-  if (!gameLeftSidebar || !(gameLeftSidebar instanceof GameLeftSidebar)) {
+  if (gameLeftSidebar && gameLeftSidebar instanceof GameLeftSidebar) {
+    gameLeftSidebar.game = game;
+  } else {
     console.error("GameLeftSidebar element not found in the DOM");
   }
-  gameLeftSidebar.game = game;
 
   const teamStats = document.querySelector("team-stats") as TeamStats;
-  if (!teamStats || !(teamStats instanceof TeamStats)) {
+  if (teamStats && teamStats instanceof TeamStats) {
+    teamStats.eventBus = eventBus;
+    teamStats.game = game;
+  } else {
     console.error("TeamStats element not found in the DOM");
   }
-  teamStats.eventBus = eventBus;
-  teamStats.game = game;
 
   const controlPanel = document.querySelector("control-panel") as ControlPanel;
-  if (!(controlPanel instanceof ControlPanel)) {
+  if (controlPanel && controlPanel instanceof ControlPanel) {
+    controlPanel.eventBus = eventBus;
+    controlPanel.uiState = uiState;
+    controlPanel.game = game;
+  } else {
     console.error("ControlPanel element not found in the DOM");
   }
-  controlPanel.eventBus = eventBus;
-  controlPanel.uiState = uiState;
-  controlPanel.game = game;
 
   const eventsDisplay = document.querySelector(
     "events-display",
   ) as EventsDisplay;
-  if (!(eventsDisplay instanceof EventsDisplay)) {
+  if (eventsDisplay && eventsDisplay instanceof EventsDisplay) {
+    eventsDisplay.eventBus = eventBus;
+    eventsDisplay.game = game;
+  } else {
     console.error("events display not found");
   }
-  eventsDisplay.eventBus = eventBus;
-  eventsDisplay.game = game;
 
   const chatDisplay = document.querySelector("chat-display") as ChatDisplay;
-  if (!(chatDisplay instanceof ChatDisplay)) {
+  if (chatDisplay && chatDisplay instanceof ChatDisplay) {
+    chatDisplay.eventBus = eventBus;
+    chatDisplay.game = game;
+  } else {
     console.error("chat display not found");
   }
-  chatDisplay.eventBus = eventBus;
-  chatDisplay.game = game;
 
   const playerInfo = document.querySelector(
     "player-info-overlay",
   ) as PlayerInfoOverlay;
-  if (!(playerInfo instanceof PlayerInfoOverlay)) {
+  if (playerInfo && playerInfo instanceof PlayerInfoOverlay) {
+    playerInfo.eventBus = eventBus;
+    playerInfo.transform = transformHandler;
+    playerInfo.game = game;
+  } else {
     console.error("player info overlay not found");
   }
-  playerInfo.eventBus = eventBus;
-  playerInfo.transform = transformHandler;
-  playerInfo.game = game;
 
   const winModal = document.querySelector("win-modal") as WinModal;
-  if (!(winModal instanceof WinModal)) {
+  if (winModal && winModal instanceof WinModal) {
+    winModal.eventBus = eventBus;
+    winModal.game = game;
+  } else {
     console.error("win modal not found");
   }
-  winModal.eventBus = eventBus;
-  winModal.game = game;
 
   const replayPanel = document.querySelector("replay-panel") as ReplayPanel;
-  if (!(replayPanel instanceof ReplayPanel)) {
+  if (replayPanel && replayPanel instanceof ReplayPanel) {
+    replayPanel.eventBus = eventBus;
+    replayPanel.game = game;
+  } else {
     console.error("replay panel not found");
   }
-  replayPanel.eventBus = eventBus;
-  replayPanel.game = game;
 
   const gameRightSidebar = document.querySelector(
     "game-right-sidebar",
   ) as GameRightSidebar;
-  if (!(gameRightSidebar instanceof GameRightSidebar)) {
+  if (gameRightSidebar && gameRightSidebar instanceof GameRightSidebar) {
+    gameRightSidebar.game = game;
+    gameRightSidebar.eventBus = eventBus;
+  } else {
     console.error("Game Right bar not found");
   }
-  gameRightSidebar.game = game;
-  gameRightSidebar.eventBus = eventBus;
 
   const settingsModal = document.querySelector(
     "settings-modal",
   ) as SettingsModal;
-  if (!(settingsModal instanceof SettingsModal)) {
+  if (settingsModal && settingsModal instanceof SettingsModal) {
+    settingsModal.userSettings = userSettings;
+    settingsModal.eventBus = eventBus;
+  } else {
     console.error("settings modal not found");
   }
-  settingsModal.userSettings = userSettings;
-  settingsModal.eventBus = eventBus;
 
   const unitDisplay = document.querySelector("unit-display") as UnitDisplay;
-  if (!(unitDisplay instanceof UnitDisplay)) {
+  if (unitDisplay && unitDisplay instanceof UnitDisplay) {
+    unitDisplay.game = game;
+    unitDisplay.eventBus = eventBus;
+    unitDisplay.uiState = uiState;
+  } else {
     console.error("unit display not found");
   }
-  unitDisplay.game = game;
-  unitDisplay.eventBus = eventBus;
-  unitDisplay.uiState = uiState;
 
   const playerPanel = document.querySelector("player-panel") as PlayerPanel;
-  if (!(playerPanel instanceof PlayerPanel)) {
+  if (playerPanel && playerPanel instanceof PlayerPanel) {
+    playerPanel.g = game;
+    playerPanel.initEventBus(eventBus);
+    playerPanel.emojiTable = emojiTable;
+    playerPanel.uiState = uiState;
+  } else {
     console.error("player panel not found");
   }
-  playerPanel.g = game;
-  playerPanel.initEventBus(eventBus);
-  playerPanel.emojiTable = emojiTable;
-  playerPanel.uiState = uiState;
 
   const chatModal = document.querySelector("chat-modal") as ChatModal;
-  if (!(chatModal instanceof ChatModal)) {
+  if (chatModal && chatModal instanceof ChatModal) {
+    chatModal.g = game;
+    chatModal.initEventBus(eventBus);
+  } else {
     console.error("chat modal not found");
   }
-  chatModal.g = game;
-  chatModal.initEventBus(eventBus);
 
   const multiTabModal = document.querySelector(
     "multi-tab-modal",
   ) as MultiTabModal;
-  if (!(multiTabModal instanceof MultiTabModal)) {
+  if (multiTabModal && multiTabModal instanceof MultiTabModal) {
+    multiTabModal.game = game;
+  } else {
     console.error("multi-tab modal not found");
   }
-  multiTabModal.game = game;
 
   const headsUpMessage = document.querySelector(
     "heads-up-message",
   ) as HeadsUpMessage;
-  if (!(headsUpMessage instanceof HeadsUpMessage)) {
+  if (headsUpMessage && headsUpMessage instanceof HeadsUpMessage) {
+    headsUpMessage.game = game;
+  } else {
     console.error("heads-up message not found");
   }
-  headsUpMessage.game = game;
 
   const structureLayer = new StructureLayer(game, eventBus, transformHandler);
 
   const performanceOverlay = document.querySelector(
     "performance-overlay",
   ) as PerformanceOverlay;
-  if (!(performanceOverlay instanceof PerformanceOverlay)) {
+  if (performanceOverlay && performanceOverlay instanceof PerformanceOverlay) {
+    performanceOverlay.eventBus = eventBus;
+    performanceOverlay.userSettings = userSettings;
+  } else {
     console.error("performance overlay not found");
   }
-  performanceOverlay.eventBus = eventBus;
-  performanceOverlay.userSettings = userSettings;
 
   const alertFrame = document.querySelector("alert-frame") as AlertFrame;
-  if (!(alertFrame instanceof AlertFrame)) {
+  if (alertFrame && alertFrame instanceof AlertFrame) {
+    alertFrame.game = game;
+  } else {
     console.error("alert frame not found");
   }
-  alertFrame.game = game;
 
   const spawnTimer = document.querySelector("spawn-timer") as SpawnTimer;
-  if (!(spawnTimer instanceof SpawnTimer)) {
+  if (spawnTimer && spawnTimer instanceof SpawnTimer) {
+    spawnTimer.game = game;
+    spawnTimer.transformHandler = transformHandler;
+  } else {
     console.error("spawn timer not found");
   }
-  spawnTimer.game = game;
-  spawnTimer.transformHandler = transformHandler;
 
   // When updating these layers please be mindful of the order.
   // Try to group layers by the return value of shouldTransform.
   // Not grouping the layers may cause excessive calls to context.save() and context.restore().
+  // Only add non-null layers to the array to avoid runtime errors.
   const layers: Layer[] = [
     new TerrainLayer(game, transformHandler),
     new TerritoryLayer(game, eventBus, transformHandler, userSettings),
@@ -237,9 +263,9 @@ export function createRenderer(
     new UILayer(game, eventBus, transformHandler),
     new StructureIconsLayer(game, eventBus, uiState, transformHandler),
     new NameLayer(game, transformHandler, eventBus),
-    eventsDisplay,
-    chatDisplay,
-    buildMenu,
+    eventsDisplay, // This is checked above
+    chatDisplay, // This is checked above
+    buildMenu, // This is checked above
     new MainRadialMenu(
       eventBus,
       game,
@@ -249,24 +275,24 @@ export function createRenderer(
       uiState,
       playerPanel,
     ),
-    spawnTimer,
-    leaderboard,
-    gameLeftSidebar,
-    unitDisplay,
-    gameRightSidebar,
-    controlPanel,
-    playerInfo,
-    winModal,
-    replayPanel,
-    settingsModal,
-    teamStats,
-    playerPanel,
-    headsUpMessage,
-    multiTabModal,
+    spawnTimer, // This is checked above
+    leaderboard, // This is checked above
+    gameLeftSidebar, // This is checked above
+    unitDisplay, // This is checked above
+    gameRightSidebar, // This is checked above
+    controlPanel, // This is checked above
+    playerInfo, // This is checked above
+    winModal, // This is checked above
+    replayPanel, // This is checked above
+    settingsModal, // This is checked above
+    teamStats, // This is checked above
+    playerPanel, // This is checked above
+    headsUpMessage, // This is checked above
+    multiTabModal, // This is checked above
     new AdTimer(game),
-    alertFrame,
-    performanceOverlay,
-  ];
+    alertFrame, // This is checked above
+    performanceOverlay, // This is checked above
+  ].filter((layer) => layer !== null) as Layer[];
 
   return new GameRenderer(
     game,
@@ -289,7 +315,7 @@ export class GameRenderer {
     public transformHandler: TransformHandler,
     public uiState: UIState,
     private layers: Layer[],
-    private performanceOverlay: PerformanceOverlay,
+    private performanceOverlay: PerformanceOverlay | null,
   ) {
     const context = canvas.getContext("2d");
     if (context === null) throw new Error("2d context not supported");
@@ -373,7 +399,10 @@ export class GameRenderer {
     requestAnimationFrame(() => this.renderGame());
     const duration = performance.now() - start;
 
-    this.performanceOverlay.updateFrameMetrics(duration);
+    // Only update performance metrics if performanceOverlay exists
+    if (this.performanceOverlay) {
+      this.performanceOverlay.updateFrameMetrics(duration);
+    }
 
     if (duration > 50) {
       console.warn(

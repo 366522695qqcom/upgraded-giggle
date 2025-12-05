@@ -76,9 +76,13 @@ export class WorkerClient {
       setTimeout(() => {
         if (!this.isInitialized) {
           this.messageHandlers.delete(messageId);
-          reject(new Error("Worker initialization timeout"));
+          reject(
+            new Error(
+              `Worker initialization timeout - gameConfig: ${JSON.stringify(this.gameStartInfo.config)}`,
+            ),
+          );
         }
-      }, 5000); // 5 second timeout
+      }, 60000); // 60 second timeout - further increased to handle very large maps and slow environments, especially with many bots
     });
   }
 

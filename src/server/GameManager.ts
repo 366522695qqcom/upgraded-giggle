@@ -56,7 +56,7 @@ export class GameManager {
         infiniteTroops: false,
         instantBuild: false,
         gameMode: GameMode.FFA,
-        bots: 400,
+        bots: 100,
         disabledUnits: [],
         ...gameConfig,
       },

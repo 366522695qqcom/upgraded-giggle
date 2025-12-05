@@ -49,22 +49,8 @@ export class GoogleAdElement extends LitElement {
   `;
 
   render() {
-    if (isElectron()) {
-      return html``;
-    }
-    return html`
-      <div class="google-ad-container">
-        <ins
-          class="adsbygoogle"
-          style="display:block"
-          data-ad-client="${this.adClient}"
-          data-ad-slot="${this.adSlot}"
-          data-ad-format="${this.adFormat}"
-          data-full-width-responsive="${this.fullWidthResponsive}"
-          data-adtest="${this.adTest}"
-        ></ins>
-      </div>
-    `;
+    // Disable ads by always returning empty content
+    return html``;
   }
 
   connectedCallback() {
@@ -82,38 +68,5 @@ export class GoogleAdElement extends LitElement {
     }, 100);
   }
 }
-
-// Check if running in Electron
-const isElectron = () => {
-  // Renderer process
-  if (
-    window !== undefined &&
-    typeof window.process === "object" &&
-    // @ts-expect-error hidden
-    window.process.type === "renderer"
-  ) {
-    return true;
-  }
-
-  // Main process
-  if (
-    process !== undefined &&
-    typeof process.versions === "object" &&
-    !!process.versions.electron
-  ) {
-    return true;
-  }
-
-  // Detect the user agent when the `nodeIntegration` option is set to false
-  if (
-    typeof navigator === "object" &&
-    typeof navigator.userAgent === "string" &&
-    navigator.userAgent.indexOf("Electron") >= 0
-  ) {
-    return true;
-  }
-
-  return false;
-};
 
 export default GoogleAdElement;

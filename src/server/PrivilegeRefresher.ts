@@ -1,6 +1,5 @@
 import { base64url } from "jose";
 import { Logger } from "winston";
-import { CosmeticsSchema } from "../core/CosmeticSchemas";
 import {
   FailOpenPrivilegeChecker,
   PrivilegeChecker,
@@ -8,7 +7,7 @@ import {
 } from "./Privilege";
 
 // Refreshes the privilege checker every 5 minutes.
-// WARNING: This fails open if cosmetics.json is not available.
+// In offline mode, we'll use a fallback mechanism instead of failing
 export class PrivilegeRefresher {
   private privilegeChecker: PrivilegeChecker | null = null;
   private failOpenPrivilegeChecker: PrivilegeChecker =
@@ -43,6 +42,14 @@ export class PrivilegeRefresher {
   private async loadPrivilegeChecker(): Promise<void> {
     this.log.info(`Loading privilege checker from ${this.endpoint}`);
     try {
+      // 在离线模式下，直接使用回退机制而不尝试网络请求
+      this.log.info("Offline mode: Using fallback privilege checker directly");
+      this.useFallbackPrivilegeChecker();
+      return;
+
+      // 以下代码在离线模式下会被跳过
+      /*
+      // Try to fetch from endpoint first
       const response = await fetch(this.endpoint);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -60,9 +67,39 @@ export class PrivilegeRefresher {
         base64url.decode,
       );
       this.log.info(`Privilege checker loaded successfully`);
+      */
     } catch (error) {
-      this.log.error(`Failed to fetch cosmetics from ${this.endpoint}:`, error);
-      throw error;
+      this.log.error(`Error in privilege checker loading:`, error);
+
+      // 确保在任何错误情况下都使用回退机制
+      try {
+        this.useFallbackPrivilegeChecker();
+      } catch (fallbackError) {
+        this.log.error(
+          `Failed to initialize fallback privilege checker:`,
+          fallbackError,
+        );
+      }
     }
+  }
+
+  private useFallbackPrivilegeChecker(): void {
+    // Create minimal cosmetics data for offline mode
+    const fallbackCosmeticsData = {
+      patterns: [],
+      heads: [],
+      flags: [],
+      nameStyles: [],
+    };
+
+    // Create privilege checker with fallback data
+    this.privilegeChecker = new PrivilegeCheckerImpl(
+      fallbackCosmeticsData,
+      base64url.decode,
+    );
+
+    this.log.info(
+      `Fallback privilege checker initialized successfully for offline mode`,
+    );
   }
 }

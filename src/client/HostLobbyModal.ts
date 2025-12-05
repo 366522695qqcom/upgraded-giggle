@@ -39,7 +39,7 @@ export class HostLobbyModal extends LitElement {
   @state() private disableNPCs = false;
   @state() private gameMode: GameMode = GameMode.FFA;
   @state() private teamCount: TeamCountConfig = 2;
-  @state() private bots: number = 400;
+  @state() private bots: number = 100;
   @state() private infiniteGold: boolean = false;
   @state() private donateGold: boolean = false;
   @state() private infiniteTroops: boolean = false;

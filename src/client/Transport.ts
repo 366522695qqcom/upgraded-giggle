@@ -1,13 +1,6 @@
 import { z } from "zod";
 import { EventBus, GameEvent } from "../core/EventBus";
-import {
-  AllPlayers,
-  GameType,
-  Gold,
-  PlayerID,
-  Tick,
-  UnitType,
-} from "../core/game/Game";
+import { AllPlayers, Gold, PlayerID, Tick, UnitType } from "../core/game/Game";
 import { TileRef } from "../core/game/GameMap";
 import { PlayerView } from "../core/game/GameView";
 import {
@@ -175,7 +168,7 @@ export class SendKickPlayerIntentEvent implements GameEvent {
 export class Transport {
   private socket: WebSocket | null = null;
 
-  private localServer: LocalServer;
+  private localServer: LocalServer | null = null;
 
   private buffer: string[] = [];
 
@@ -188,11 +181,9 @@ export class Transport {
     private lobbyConfig: LobbyConfig,
     private eventBus: EventBus,
   ) {
-    // If gameRecord is not null, we are replaying an archived game.
-    // For multiplayer games, GameConfig is not known until game starts.
-    this.isLocal =
-      lobbyConfig.gameRecord !== undefined ||
-      lobbyConfig.gameStartInfo?.config.gameType === GameType.Singleplayer;
+    // Disable online mode, force local mode always
+    // This prevents network connections and WebSocket attempts
+    this.isLocal = true;
 
     this.eventBus.on(SendAllianceRequestIntentEvent, (e) =>
       this.onSendAllianceRequest(e),
@@ -291,14 +282,42 @@ export class Transport {
     onconnect: () => void,
     onmessage: (message: ServerMessage) => void,
   ) {
-    this.localServer = new LocalServer(
-      this.lobbyConfig,
-      onconnect,
-      onmessage,
-      this.lobbyConfig.gameRecord !== undefined,
-      this.eventBus,
-    );
-    this.localServer.start();
+    // 添加null检查，确保回调函数存在
+    if (!onconnect) {
+      console.error("onconnect callback is null or undefined");
+      onconnect = () => console.warn("onconnect was null");
+    }
+    if (!onmessage) {
+      console.error("onmessage callback is null or undefined");
+      onmessage = () => console.warn("onmessage was null");
+    }
+
+    try {
+      this.localServer = new LocalServer(
+        this.lobbyConfig,
+        onconnect,
+        onmessage,
+        this.lobbyConfig.gameRecord !== undefined,
+        this.eventBus,
+      );
+
+      // 添加null检查，确保LocalServer实例创建成功
+      if (this.localServer) {
+        this.localServer.start();
+      } else {
+        console.error("Failed to create LocalServer instance");
+        // 仍然调用onconnect以确保应用程序可以继续
+        onconnect();
+      }
+    } catch (error) {
+      console.error("Error creating or starting LocalServer:", error);
+      // 即使出错也调用onconnect以防止应用程序卡住
+      try {
+        onconnect();
+      } catch (err) {
+        console.error("Error in onconnect callback:", err);
+      }
+    }
   }
 
   private connectRemote(
@@ -371,27 +390,34 @@ export class Transport {
   }
 
   public turnComplete() {
-    if (this.isLocal) {
+    if (this.isLocal && this.localServer) {
       this.localServer.turnComplete();
+    } else if (this.isLocal) {
+      console.warn("Cannot complete turn: localServer is not initialized");
     }
   }
 
   joinGame(numTurns: number) {
-    this.sendMsg({
-      type: "join",
-      gameID: this.lobbyConfig.gameID,
-      clientID: this.lobbyConfig.clientID,
-      lastTurn: numTurns,
-      token: this.lobbyConfig.token,
-      username: this.lobbyConfig.playerName,
-      cosmetics: this.lobbyConfig.cosmetics,
-    } satisfies ClientJoinMessage);
+    // In offline mode, we don't need to join a remote game
+    if (!this.isLocal) {
+      this.sendMsg({
+        type: "join",
+        gameID: this.lobbyConfig.gameID,
+        clientID: this.lobbyConfig.clientID,
+        lastTurn: numTurns,
+        token: this.lobbyConfig.token,
+        username: this.lobbyConfig.playerName,
+        cosmetics: this.lobbyConfig.cosmetics,
+      } satisfies ClientJoinMessage);
+    }
   }
 
   leaveGame() {
-    if (this.isLocal) {
+    if (this.isLocal && this.localServer) {
       this.localServer.endGame();
       return;
+    } else if (this.isLocal) {
+      console.warn("Cannot end game: localServer is not initialized");
     }
     this.stopPing();
     if (this.socket === null) return;
@@ -557,10 +583,14 @@ export class Transport {
       console.log(`cannot pause multiplayer games`);
       return;
     }
-    if (event.paused) {
-      this.localServer.pause();
+    if (this.localServer) {
+      if (event.paused) {
+        this.localServer.pause();
+      } else {
+        this.localServer.resume();
+      }
     } else {
-      this.localServer.resume();
+      console.warn("Cannot pause/resume game: localServer is not initialized");
     }
   }
 
@@ -654,20 +684,27 @@ export class Transport {
   }
 
   private sendMsg(msg: ClientMessage) {
-    if (this.isLocal) {
-      // Forward message to local server
+    // In offline mode, only send messages to local server if it exists
+    if (this.isLocal && this.localServer) {
       this.localServer.onMessage(msg);
+      return;
+    } else if (this.isLocal) {
+      console.warn("Cannot send message: localServer is not initialized");
       return;
     } else if (this.socket === null) {
       // Socket missing, do nothing
       return;
     }
     const str = JSON.stringify(msg, replacer);
-    if (this.socket.readyState === WebSocket.CLOSED) {
+    if (this.socket && this.socket.readyState === WebSocket.CLOSED) {
       // Buffer message
-      console.warn("socket not ready, closing and trying later");
-      this.socket.close();
-      this.socket = null;
+      console.warn("socket not ready, reconnecting later");
+      this.socket = null; // 直接设置为null，不需要再次调用close()
+      this.connectRemote(this.onconnect, this.onmessage);
+      this.buffer.push(str);
+    } else if (!this.socket) {
+      // Socket is null, try to connect and buffer the message
+      console.warn("socket is null, connecting and buffering message");
       this.connectRemote(this.onconnect, this.onmessage);
       this.buffer.push(str);
     } else {
@@ -677,19 +714,22 @@ export class Transport {
   }
 
   private killExistingSocket(): void {
-    if (this.socket === null) {
-      return;
-    }
-    // Remove all event listeners
-    this.socket.onmessage = null;
-    this.socket.onopen = null;
-    this.socket.onclose = null;
-    this.socket.onerror = null;
+    // In offline mode, we don't need to kill any socket
+    if (!this.isLocal) {
+      if (this.socket === null) {
+        return;
+      }
+      // Remove all event listeners
+      this.socket.onmessage = null;
+      this.socket.onopen = null;
+      this.socket.onclose = null;
+      this.socket.onerror = null;
 
-    // Close the connection if it's still open
-    if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.close();
+      // Close the connection if it's still open
+      if (this.socket.readyState === WebSocket.OPEN) {
+        this.socket.close();
+      }
+      this.socket = null;
     }
-    this.socket = null;
   }
 }

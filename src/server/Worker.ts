@@ -48,8 +48,9 @@ export async function startWorker() {
     initWorkerMetrics(gm);
   }
 
+  // 在离线模式下，使用空字符串作为endpoint，PrivilegeRefresher会使用本地回退机制
   const privilegeRefresher = new PrivilegeRefresher(
-    config.jwtIssuer() + "/cosmetics.json",
+    "", // 空字符串表示使用离线模式
     log,
   );
   privilegeRefresher.start();
@@ -82,11 +83,18 @@ export async function startWorker() {
   app.set("trust proxy", 3);
   app.use(compression());
   app.use(express.json());
+  // 确保静态文件正确服务，包括地图文件
   app.use(express.static(path.join(__dirname, "../../out")));
+  // 直接提供resources目录中的地图文件
+  app.use(
+    "/maps",
+    express.static(path.join(__dirname, "../../resources/maps")),
+  );
+  // 增加速率限制以避免429错误
   app.use(
     rateLimit({
       windowMs: 1000, // 1 second
-      max: 20, // 20 requests per IP per second
+      max: 50, // 增加到50个请求每秒
     }),
   );
 

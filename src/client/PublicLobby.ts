@@ -73,16 +73,9 @@ export class PublicLobby extends LitElement {
   }
 
   async fetchLobbies(): Promise<GameInfo[]> {
-    try {
-      const response = await fetch(`/api/public_lobbies`);
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      return data.lobbies;
-    } catch (error) {
-      console.error("Error fetching lobbies:", error);
-      throw error;
-    }
+    // Offline mode: return empty lobby list to prevent network requests
+    console.log("Offline mode: skipping public lobby fetch");
+    return [];
   }
 
   public stop() {
