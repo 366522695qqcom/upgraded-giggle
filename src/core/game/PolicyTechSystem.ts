@@ -169,7 +169,7 @@ export class PolicyManager {
 
     // 检查成本
     const playerImpl = this.player as any;
-    return playerImpl?.gold() >= policy.cost || false;
+    return playerImpl?.gold() >= policy.cost ?? false;
   }
 
   // 获取所有激活的国策
