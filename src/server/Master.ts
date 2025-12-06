@@ -271,7 +271,17 @@ async function fetchLobbies(): Promise<number> {
         return json as GameInfo;
       })
       .catch((error) => {
-        log.error(`Error fetching game ${gameID}:`, error);
+        if (error instanceof Error) {
+          if (error.name === "AbortError") {
+            log.error(
+              `Error fetching game ${gameID}: Timeout or game no longer exists`,
+            );
+          } else {
+            log.error(`Error fetching game ${gameID}:`, error);
+          }
+        } else {
+          log.error(`Error fetching game ${gameID}:`, error);
+        }
         // Return null or a placeholder if fetch fails
         publicLobbyIDs.delete(gameID);
         return null;
